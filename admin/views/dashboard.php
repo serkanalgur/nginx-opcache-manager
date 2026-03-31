@@ -13,6 +13,27 @@ $nginx = new Nginx_Opcache_Manager_Cache();
 $opcache = new Nginx_Opcache_Manager_Opcache();
 $nginx_stats = $nginx->get_cache_stats();
 $opcache_stats = $opcache->get_opcache_stats();
+
+// Build chart data for JavaScript
+$chart_data = array(
+	'current' => array(
+		'opcache' => array(
+			'hit_rate'      => floatval( $opcache_stats['hit_rate'] ?? 0 ),
+			'memory_usage'  => floatval( $opcache_stats['memory_usage'] ?? 0 ),
+			'cached_scripts' => intval( $opcache_stats['cached_scripts'] ?? 0 ),
+		),
+		'nginx' => array(
+			'cache_size'   => intval( $nginx_stats['cache_size'] ?? 0 ),
+			'cached_files' => intval( $nginx_stats['cached_files'] ?? 0 ),
+		),
+	),
+	'opcache_hits'    => array(),
+	'opcache_misses'  => array(),
+	'opcache_memory'  => array(),
+	'nginx_sizes'     => array(),
+	'nginx_files'     => array(),
+	'timestamps'      => array(),
+);
 ?>
 
 <div class="wrap">
@@ -124,16 +145,16 @@ $opcache_stats = $opcache->get_opcache_stats();
 					<div class="nom-chart-wrapper">
 						<h3><?php esc_html_e( 'Opcache Hit Rate', 'nginx-opcache-manager' ); ?></h3>
 						<div class="nom-gauge-container">
-							<canvas id="nomHitRateChart" style="max-width: 250px; margin: 0 auto;"></canvas>
-						</div>
-						<div class="gauge-value">
-							<span id="hitRateValue"><?php echo esc_html( $opcache_stats['hit_rate'] ); ?></span>%
-						</div>
+						<canvas id="nomHitRateChart" width="250" height="250"></canvas>
 					</div>
-					<div class="nom-chart-wrapper">
-						<h3><?php esc_html_e( 'Memory Usage', 'nginx-opcache-manager' ); ?></h3>
-						<div class="nom-gauge-container">
-							<canvas id="nomMemoryChart" style="max-width: 250px; margin: 0 auto;"></canvas>
+					<div class="gauge-value">
+						<span id="hitRateValue"><?php echo esc_html( $opcache_stats['hit_rate'] ); ?></span>%
+					</div>
+				</div>
+				<div class="nom-chart-wrapper">
+					<h3><?php esc_html_e( 'Memory Usage', 'nginx-opcache-manager' ); ?></h3>
+					<div class="nom-gauge-container">
+						<canvas id="nomMemoryChart" width="250" height="250"></canvas>
 						</div>
 						<div class="gauge-value">
 							<span id="memoryValue"><?php echo esc_html( $opcache_stats['memory_usage'] ); ?></span>%
@@ -164,4 +185,9 @@ $opcache_stats = $opcache->get_opcache_stats();
 			</ul>
 		</div>
 	</div>
+
+	<!-- Chart Data -->
+	<script type="application/json" id="nomChartData">
+		<?php echo wp_json_encode( $chart_data ); ?>
+	</script>
 </div>

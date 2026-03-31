@@ -105,6 +105,12 @@ class Nginx_Opcache_Manager_Admin {
 			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
 			'pluginUrl' => NGINX_OPCACHE_MANAGER_PLUGIN_URL,
 		) );
+
+		// Localize JavaScript strings
+		wp_localize_script( 'nom-admin', 'nomLocalize', array(
+			'confirmClearCache'   => __( 'Are you sure you want to clear the Nginx cache?', 'nginx-opcache-manager' ),
+			'confirmResetOpcache' => __( 'Are you sure you want to reset Opcache?', 'nginx-opcache-manager' ),
+		) );
 	}
 
 	/**

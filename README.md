@@ -259,6 +259,14 @@ For issues and feature requests, please visit the plugin's support page.
 
 ## Changelog
 
+### Version 1.0.1
+- **Fixed** JavaScript localization error where nomLocalize object was undefined
+- **Fixed** Gauge charts not displaying in Live Performance Metrics section
+- **Fixed** Canvas element sizing for proper Chart.js doughnut chart rendering
+- **Fixed** Chart initialization requiring history data when none exists
+- **Improved** Dashboard initialization to show charts immediately on first load
+- **Enhanced** Confirmation dialogs for cache clearing and opcache reset operations
+
 ### Version 1.0.0
 - Initial release
 - Nginx cache management

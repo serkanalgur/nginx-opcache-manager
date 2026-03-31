@@ -4,6 +4,21 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-03-31
+
+### Fixed
+- Fixed JavaScript localization error where `nomLocalize` object was undefined
+  - Added second `wp_localize_script()` call to properly pass confirmation dialog strings
+  - Confirmation dialogs for cache clearing and opcache reset now display correctly
+- Fixed gauge charts not displaying in Live Performance Metrics section
+  - Added explicit width and height attributes to canvas elements for proper Chart.js rendering
+  - Removed conflicting CSS `max-height` property that interfered with chart sizing
+  - Charts now display properly as doughnut/gauge visualizations
+- Fixed chart initialization issue on dashboard
+  - Added `nomChartData` JSON element with current opcache and nginx statistics
+  - Updated chart creation conditions to render dashboard charts on first load without requiring history data
+  - Doughnut charts for Hit Rate and Memory Usage now initialize immediately
+
 ## [1.0.0] - 2026-03-31
 
 ### Added

@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,15 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.0.1 - March 31, 2026 =
+
+* **Fixed** JavaScript localization error where nomLocalize object was undefined
+* **Fixed** Gauge charts not displaying in Live Performance Metrics section
+* **Fixed** Canvas element sizing for proper Chart.js doughnut chart rendering
+* **Fixed** Chart initialization issue requiring history data when none exists
+* **Improved** Dashboard initialization to show charts immediately on first load
+* **Enhanced** Confirmation dialogs for cache clearing and opcache reset operations
 
 = 1.0.0 - March 31, 2026 =
 

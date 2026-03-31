@@ -210,13 +210,13 @@
                 NOM.createCachedFilesChart(data);
             }
 
-            // Hit Rate Chart (Dashboard)
-            if (data.opcache_hits && data.opcache_hits.length > 0) {
+            // Hit Rate Chart (Dashboard) - Always draw if we have current data
+            if (data.current && data.current.opcache) {
                 NOM.createHitRateChart(data);
             }
 
-            // Memory Chart (Dashboard)
-            if (data.opcache_memory && data.opcache_memory.length > 0) {
+            // Memory Chart (Dashboard) - Always draw if we have current data
+            if (data.current && data.current.opcache) {
                 NOM.createMemoryChart(data);
             }
         },

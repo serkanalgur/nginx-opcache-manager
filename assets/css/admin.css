@@ -205,7 +205,6 @@
 }
 
 .nom-gauge-container canvas {
-    max-height: 250px !important;
     width: 250px !important;
     height: 250px !important;
 }
