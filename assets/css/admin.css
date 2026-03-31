@@ -204,10 +204,10 @@
     padding: 20px 0;
 }
 
-.nom-gauge-container canvas {
+/*.nom-gauge-container canvas {
     width: 250px !important;
     height: 250px !important;
-}
+}*/
 
 .gauge-value {
     text-align: center;
@@ -215,7 +215,6 @@
     font-weight: 700;
     color: #0073aa;
     margin-top: 10px;
-}
 }
 
 .chart-wrapper.full-width {
@@ -345,6 +344,23 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.nom-activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nom-activity-header h2 {
+    margin: 0;
+    color: #23282d;
+    font-size: 18px;
+}
+
+.nom-activity-header .button {
+    margin-left: 10px;
+}
+
 .nom-activity-section h2 {
     margin: 0 0 20px 0;
     color: #23282d;
@@ -363,45 +379,178 @@
     border-radius: 4px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.nom-flush-log-item.post_change {
+.nom-flush-log-item.deleted {
     border-left-color: #28a745;
+    background: #f0f9f4;
 }
 
-.nom-flush-log-item.post_publish {
-    border-left-color: #17a2b8;
+.nom-flush-log-item.delete_failed {
+    border-left-color: #dc3545;
+    background: #fff5f5;
 }
 
-.nom-flush-log-item.term_edit {
+.nom-flush-log-item.not_found {
     border-left-color: #ffc107;
+    background: #fff8f0;
 }
 
-.nom-flush-log-item.comment_change {
+.nom-flush-log-item.unknown {
     border-left-color: #6c757d;
+    background: #f8f9fa;
+}
+
+.flush-log-status-icon {
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nom-flush-log-item.deleted .flush-log-status-icon {
+    color: #28a745;
+}
+
+.nom-flush-log-item.delete_failed .flush-log-status-icon {
+    color: #dc3545;
+}
+
+.nom-flush-log-item.not_found .flush-log-status-icon {
+    color: #ffc107;
+}
+
+.nom-flush-log-item.unknown .flush-log-status-icon {
+    color: #6c757d;
 }
 
 .flush-log-details {
     flex: 1;
+    min-width: 0;
 }
 
 .flush-log-action {
     font-weight: 600;
     color: #23282d;
-    text-transform: capitalize;
+    text-transform: uppercase;
     margin-bottom: 4px;
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(0, 115, 170, 0.1);
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.nom-flush-log-item.deleted .flush-log-action {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+}
+
+.nom-flush-log-item.delete_failed .flush-log-action {
+    background: rgba(220, 53, 69, 0.1);
+    color: #721c24;
+}
+
+.nom-flush-log-item.not_found .flush-log-action {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.nom-flush-log-item.unknown .flush-log-action {
+    background: rgba(108, 117, 125, 0.1);
+    color: #383d41;
+}
+
+.nom-flush-log-item.post_change {
+    border-left: 4px solid #0073aa;
+    background: #f0f6fc;
+}
+
+.nom-flush-log-item.post_change .flush-log-status-icon {
+    color: #0073aa;
+}
+
+.nom-flush-log-item.post_change .flush-log-action {
+    background: rgba(0, 115, 170, 0.1);
+    color: #003d6b;
+}
+
+.nom-flush-log-item.post_publish {
+    border-left: 4px solid #6f42c1;
+    background: #f7f3ff;
+}
+
+.nom-flush-log-item.post_publish .flush-log-status-icon {
+    color: #6f42c1;
+}
+
+.nom-flush-log-item.post_publish .flush-log-action {
+    background: rgba(111, 66, 193, 0.1);
+    color: #4a2e73;
+}
+
+.flush-log-post-info {
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 6px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 3px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .flush-log-name {
     font-size: 13px;
+    color: #333;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.flush-log-url {
+    font-size: 12px;
+    color: #333;
+    margin-bottom: 4px;
+    word-break: break-all;
+    padding: 4px 6px;
+    background: #fff;
+    border-radius: 3px;
+    border-left: 2px solid #0073aa;
+    padding-left: 8px;
+}
+
+.flush-log-path {
+    font-size: 11px;
     color: #666;
     margin-bottom: 4px;
+    font-family: monospace;
+    background: #fff;
+    padding: 4px 6px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    word-break: break-all;
+    max-width: 100%;
+    width: 100%;
+    display: block;
+}
+
+.path-label {
+    font-weight: 600;
+    color: #555;
+    display: inline-block;
+    min-width: 40px;
 }
 
 .flush-log-time {
     font-size: 12px;
     color: #aaa;
+    margin-left: auto;
+    padding-left: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nom-flush-logs-empty {

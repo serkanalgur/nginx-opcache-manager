@@ -259,6 +259,23 @@ For issues and feature requests, please visit the plugin's support page.
 
 ## Changelog
 
+### Version 1.1.0
+- **Added** Cache Flush Activity Logging with persistent database storage
+  - Track all cache deletion operations with success/failure status
+  - Add post publication and modification tracking
+  - Display file paths for debugging and audit trails
+- **Added** Customizable fastcgi_cache_key_schema setting
+  - Support for custom cache key formats
+  - Tag-based template system: $scheme, $request_method, $host, $request_uri, $query_string
+- **Added** Clear Activity Logs button to manage database storage
+- **Fixed** Fastcgi cache path calculation
+  - Corrected directory structure to use last 2 digits before final character
+  - Example: `/5/9f/beda56a8736ae8bc335cdd74983649f5` (was `/ed/a5/...`)
+- **Fixed** JavaScript type safety issue in escapeHtml() function
+- **Improved** Memory optimization by reducing refresh interval from 5s to 30s
+- **Improved** Activity log display with color-coded status indicators
+- **Added** Debug logging for troubleshooting cache operations
+
 ### Version 1.0.1
 - **Fixed** JavaScript localization error where nomLocalize object was undefined
 - **Fixed** Gauge charts not displaying in Live Performance Metrics section

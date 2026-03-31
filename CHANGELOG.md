@@ -4,6 +4,50 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-03-31
+
+### Added
+- **Cache Flush Activity Logging**: New database table to persistently track all cache-related activities
+  - Logs cache deletion attempts with success/failure status
+  - Displays cache file paths for debugging and audit trails
+  - Shows post publication and modification events with post details
+  - Accessible from main dashboard for easy monitoring
+- **Post Activity Tracking**: Monitor when posts are published or modified
+  - Display Post ID and title in activity log
+  - Color-coded indicators for different event types
+  - Automatic logging when posts change or are published
+- **Customizable Cache Key Schema**: Allow users to define their own fastcgi_cache_key format
+  - Uses tag-based templates: $scheme, $request_method, $host, $request_uri, $query_string
+  - Default: "$scheme$request_method$host$request_uri"
+  - Settings page for easy configuration
+  - Support for various Nginx cache key configurations
+- **Clear Activity Logs Button**: New button to clear old activity logs from database
+  - Confirmation dialog to prevent accidental deletion
+  - One-click clearing of all historical activity records
+  - Helps manage database storage
+
+### Fixed
+- **Fastcgi Cache Path Calculation**: Fixed incorrect directory structure for cache path
+  - Corrected path to: /[last_char]/[2_chars_before_last]/[full_md5] instead of /[first]/[second]/[rest]
+  - Example: hash `beda56a8736ae8bc335cdd74983649f5` now correctly generates `/5/9f/beda56a8736ae8bc335cdd74983649f5`
+  - Ensures proper cache file deletion at correct locations
+- **JavaScript Type Safety**: Added proper string conversion in escapeHtml() function
+  - Fixed "text.replace is not a function" error when escaping non-string values
+  - Post IDs and other numeric values now safely processed
+
+### Improved
+- **Memory Optimization**: Reduced refresh interval from 5 seconds to 30 seconds
+  - Prevents memory buildup from frequent AJAX requests
+  - Keeps dashboard responsive while reducing server load
+  - Database cleanup maintains only last 500 activity entries
+- **Activity Log Display**: Enhanced UI for displaying cache and post activities
+  - Color-coded status indicators for different activity types
+  - Clear icons for different states (✓ deleted, ⊘ not found, ✗ failed, 📝 modified, 📤 published)
+  - Structured display of relevant information for each activity type
+- **Debug Logging**: Added comprehensive WP_DEBUG logging for troubleshooting
+  - Logs cache activity insertion and retrieval
+  - Helps trace issues with cache path calculations and activity logging
+
 ## [1.0.1] - 2026-03-31
 
 ### Fixed

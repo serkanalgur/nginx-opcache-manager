@@ -166,7 +166,12 @@ $chart_data = array(
 
 		<!-- Cache Flush Activity Section -->
 		<div class="nom-activity-section">
-			<h2><?php esc_html_e( 'Cache Flush Activity', 'nginx-opcache-manager' ); ?></h2>
+			<div class="nom-activity-header">
+				<h2><?php esc_html_e( 'Cache Flush Activity', 'nginx-opcache-manager' ); ?></h2>
+				<button class="button button-secondary nom-clear-activity-logs-btn" data-nonce="<?php echo esc_attr( wp_create_nonce( 'nom_nonce' ) ); ?>" title="<?php esc_attr_e( 'Clear all activity logs from the database', 'nginx-opcache-manager' ); ?>">
+					<?php esc_html_e( 'Clear Logs', 'nginx-opcache-manager' ); ?>
+				</button>
+			</div>
 			<div id="nomFlushLogsContainer" class="nom-flush-logs">
 				<p class="description"><?php esc_html_e( 'Loading recent cache flush activity...', 'nginx-opcache-manager' ); ?></p>
 			</div>

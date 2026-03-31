@@ -16,6 +16,11 @@
             this.bindEvents();
             this.loadFlushLogs();
             this.initCharts();
+
+            // Refresh flush logs every 30 seconds (reduced from 5s to prevent memory buildup)
+            setInterval(function () {
+                NOM.loadFlushLogs();
+            }, 30000);
         },
 
         /**
@@ -25,6 +30,7 @@
             $(document)
                 .on('click', '.nom-clear-nginx-btn', NOM.clearNginxCache)
                 .on('click', '.nom-reset-opcache-btn', NOM.resetOpcache)
+                .on('click', '.nom-clear-activity-logs-btn', NOM.clearActivityLogs)
                 .on('click', '#nomClearDataBtn', NOM.clearAllData);
         },
 
@@ -41,6 +47,7 @@
                 },
                 success: function (response) {
                     if (response.success) {
+                        console.log('Cache flush logs received:', response.data.logs);
                         NOM.renderFlushLogs(response.data.logs);
                     }
                 },
@@ -66,22 +73,85 @@
             let html = '';
             logs.forEach(function (log) {
                 const time = new Date(log.timestamp).toLocaleTimeString();
-                const actionLabel = log.action.replace(/_/g, ' ');
 
-                html += '<div class="nom-flush-log-item ' + log.action + '">' +
-                    '<div class="flush-log-details">' +
-                    '<div class="flush-log-action">' + actionLabel + '</div>';
+                // Normalize action value - ensure it's clean
+                const action = (log.action || '').trim().toLowerCase();
 
-                if (log.name) {
-                    html += '<div class="flush-log-name">' + log.name + '</div>';
+                // Get status icon and color based on action type
+                let statusIcon = '⚠️';
+                let statusText = 'UNKNOWN';
+                let actionClass = 'unknown';
+
+                // Cache deletion actions
+                if (action === 'deleted') {
+                    statusIcon = '✓';
+                    statusText = 'CACHE DELETED';
+                    actionClass = 'deleted';
+                } else if (action === 'not_found') {
+                    statusIcon = '⊘';
+                    statusText = 'NOT FOUND';
+                    actionClass = 'not_found';
+                } else if (action === 'delete_failed') {
+                    statusIcon = '✗';
+                    statusText = 'DELETE FAILED';
+                    actionClass = 'delete_failed';
+                }
+                // Post event actions
+                else if (action === 'post_change') {
+                    statusIcon = '📝';
+                    statusText = 'POST MODIFIED';
+                    actionClass = 'post_change';
+                } else if (action === 'post_publish') {
+                    statusIcon = '📤';
+                    statusText = 'POST PUBLISHED';
+                    actionClass = 'post_publish';
                 }
 
-                html += '<div class="flush-log-time">' + time + '</div>' +
-                    '</div>' +
+                html += '<div class="nom-flush-log-item ' + actionClass + '">' +
+                    '<div class="flush-log-status-icon">' + statusIcon + '</div>' +
+                    '<div class="flush-log-details">' +
+                    '<div class="flush-log-action">' + statusText + '</div>';
+
+                // Show post name and ID for post events
+                if (log.object_id && log.name) {
+                    html += '<div class="flush-log-post-info">' +
+                        'Post ID: ' + NOM.escapeHtml(log.object_id) + ' | ' +
+                        'Title: ' + NOM.escapeHtml(log.name) + '</div>';
+                }
+
+                // Show URL (for cache operations)
+                if (log.url) {
+                    html += '<div class="flush-log-url">' +
+                        $('<div/>').text(log.url).html() + '</div>';
+                }
+
+                // Show file path (for cache operations)
+                if (log.file_path) {
+                    html += '<div class="flush-log-path" title="' + $('<div/>').text(log.file_path).html() + '">' +
+                        '<span class="path-label">Path:</span> ' +
+                        $('<div/>').text(log.file_path).html() + '</div>';
+                }
+
+                html += '</div>' +
+                    '<div class="flush-log-time">' + time + '</div>' +
                     '</div>';
             });
 
             container.html(html);
+        },
+
+        /**
+         * Escape HTML for safe display
+         */
+        escapeHtml: function (text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         },
 
         /**
@@ -151,6 +221,43 @@
                 },
                 error: function () {
                     NOM.showNotice('Failed to reset opcache. Please try again.', 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).removeClass('nom-loading');
+                }
+            });
+        },
+
+        /**
+         * Clear activity logs via AJAX
+         */
+        clearActivityLogs: function (e) {
+            e.preventDefault();
+
+            if (!confirm('Are you sure you want to clear all activity logs? This action cannot be undone.')) {
+                return;
+            }
+
+            const $btn = $(this);
+            $btn.prop('disabled', true).addClass('nom-loading');
+
+            $.ajax({
+                url: nomData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'nom_clear_activity_logs',
+                    nonce: nomData.nonce
+                },
+                success: function (response) {
+                    if (response.success) {
+                        NOM.showNotice('Activity logs cleared successfully!', 'success');
+                        NOM.loadFlushLogs();
+                    } else {
+                        NOM.showNotice('Error: ' + response.data, 'error');
+                    }
+                },
+                error: function () {
+                    NOM.showNotice('Failed to clear activity logs. Please try again.', 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).removeClass('nom-loading');

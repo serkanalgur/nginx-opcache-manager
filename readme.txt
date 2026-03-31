@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -277,6 +277,18 @@ Yes, the plugin includes hooks and filters for developers to create custom exten
 
 == Changelog ==
 
+= 1.1.0 - March 31, 2026 =
+
+* **Added** Cache Flush Activity Logging with persistent database storage
+* **Added** Post publication and modification tracking with post details
+* **Added** Customizable fastcgi_cache_key_schema setting for custom cache key formats
+* **Added** Clear Activity Logs button to manage database storage
+* **Fixed** Fastcgi cache path calculation (corrected folder structure to use last 2 digits before final character)
+* **Fixed** JavaScript type safety issue in escapeHtml() function
+* **Improved** Memory optimization by reducing refresh interval from 5s to 30s
+* **Improved** Activity log display with color-coded status indicators
+* **Added** Debug logging for troubleshooting cache operations
+
 = 1.0.1 - March 31, 2026 =
 
 * **Fixed** JavaScript localization error where nomLocalize object was undefined
@@ -303,6 +315,10 @@ Yes, the plugin includes hooks and filters for developers to create custom exten
 * Complete documentation
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+
+Major update with cache activity logging, customizable cache key schema, and improved memory optimization. 
 
 = 1.0.0 =
 
