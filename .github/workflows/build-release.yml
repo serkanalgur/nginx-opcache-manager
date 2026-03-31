@@ -22,7 +22,7 @@ jobs:
           tools: composer
 
       - name: Install Dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-audit
 
       - name: Get tag version
         id: vars
