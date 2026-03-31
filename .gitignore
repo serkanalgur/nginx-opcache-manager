@@ -1,0 +1,50 @@
+# Nginx Opcache Manager Plugin
+
+# Composer
+composer.lock
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project files
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build files
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/backup-*
+wp-content/cache/
+
+# Languages
+languages/*.mo
+
+# NPM
+npm-debug.log
+yarn-error.log

@@ -1,0 +1,472 @@
+/* Nginx Opcache Manager Admin Styles */
+
+.wrap.nom-wrap {
+    max-width: 1200px;
+}
+
+.nom-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nom-header h1 {
+    margin: 0 0 10px 0;
+    color: white;
+    font-size: 32px;
+}
+
+.nom-header .description {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+/* Dashboard Grid */
+.nom-dashboard {
+    margin-bottom: 40px;
+}
+
+.nom-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.nom-stat-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+.nom-stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.stat-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.nom-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nom-badge-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.nom-badge-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.nom-badge-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.nom-badge-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Stat Content */
+.stat-content {
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.stat-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.stat-item label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0073aa;
+    word-break: break-word;
+}
+
+.stat-value.small {
+    font-size: 13px;
+    color: #555;
+    font-family: monospace;
+    background: #f9f9f9;
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+/* Stat Actions */
+.stat-actions {
+    padding-top: 15px;
+    border-top: 1px solid #f5f5f5;
+    display: flex;
+    gap: 10px;
+}
+
+.stat-actions .button {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Chart Section */
+.nom-chart-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nom-chart-section h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #23282d;
+    font-size: 18px;
+}
+
+.nom-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.nom-chart-wrapper {
+    position: relative;
+    height: 300px;
+}
+
+.nom-chart-wrapper h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #555;
+    font-weight: 600;
+}
+
+.nom-chart-wrapper canvas {
+    max-height: 280px;
+}
+
+.nom-gauge-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 250px;
+    padding: 20px 0;
+}
+
+.nom-gauge-container canvas {
+    max-height: 250px !important;
+    width: 250px !important;
+    height: 250px !important;
+}
+
+.gauge-value {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0073aa;
+    margin-top: 10px;
+}
+}
+
+.chart-wrapper.full-width {
+    min-height: 350px;
+}
+
+.chart-wrapper.half-width {
+    min-height: 300px;
+}
+
+.chart-wrapper h3 {
+    margin: 0 0 15px 0;
+    color: #23282d;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Summary Section */
+.nom-summary-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nom-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.nom-summary-card {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.nom-summary-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #23282d;
+    font-weight: 600;
+}
+
+.summary-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.summary-stat:last-child {
+    border-bottom: none;
+}
+
+.summary-stat .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.summary-stat .value {
+    color: #0073aa;
+    font-weight: 600;
+}
+
+/* Logs Section */
+.nom-logs-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nom-logs-section h2 {
+    margin: 0 0 20px 0;
+    color: #23282d;
+    font-size: 18px;
+}
+
+.nom-log-table-wrapper {
+    overflow-x: auto;
+}
+
+/* Quick Links */
+.nom-quick-links {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nom-quick-links h2 {
+    margin: 0 0 15px 0;
+    color: #23282d;
+    font-size: 18px;
+}
+
+.nom-quick-links ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.nom-quick-links li {
+    flex: 0 1 auto;
+}
+
+/* Activity Section */
+.nom-activity-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nom-activity-section h2 {
+    margin: 0 0 20px 0;
+    color: #23282d;
+    font-size: 18px;
+}
+
+.nom-flush-logs {
+    min-height: 150px;
+}
+
+.nom-flush-log-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #f9f9f9;
+    border-left: 4px solid #0073aa;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nom-flush-log-item.post_change {
+    border-left-color: #28a745;
+}
+
+.nom-flush-log-item.post_publish {
+    border-left-color: #17a2b8;
+}
+
+.nom-flush-log-item.term_edit {
+    border-left-color: #ffc107;
+}
+
+.nom-flush-log-item.comment_change {
+    border-left-color: #6c757d;
+}
+
+.flush-log-details {
+    flex: 1;
+}
+
+.flush-log-action {
+    font-weight: 600;
+    color: #23282d;
+    text-transform: capitalize;
+    margin-bottom: 4px;
+}
+
+.flush-log-name {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.flush-log-time {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.nom-flush-logs-empty {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+}
+
+.nom-flush-logs-empty p {
+    margin: 0;
+}
+}
+
+.stat-value {
+    font-size: 20px;
+}
+}
+
+/* Loading Animation */
+.nom-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nom-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Notification Styles */
+.nom-notice {
+    padding: 12px;
+    margin: 0 0 20px 0;
+    border-left: 4px solid #0073aa;
+    background: #f1f8ff;
+    border-radius: 4px;
+}
+
+.nom-notice.success {
+    border-left-color: #46a546;
+    background: #f1f9f6;
+}
+
+.nom-notice.error {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.nom-notice.warning {
+    border-left-color: #ff9800;
+    background: #fff8f0;
+}

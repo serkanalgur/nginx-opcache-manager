@@ -1,0 +1,277 @@
+// Nginx Opcache Manager Language File Template
+// This file shows the strings used in the plugin
+// Translators: Copy this file to your language code (e.g., en_US.po) and translate the msgstr values
+
+Domain: nginx-opcache-manager
+
+// Main Plugin
+msgid "Nginx Opcache Manager"
+msgstr "Nginx Opcache Manager"
+
+msgid "Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics"
+msgstr "Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics"
+
+msgid "Monitor and manage your Nginx cache and PHP Opcache"
+msgstr "Monitor and manage your Nginx cache and PHP Opcache"
+
+// Menu Items
+msgid "Cache Manager"
+msgstr "Cache Manager"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Analytics"
+msgstr "Analytics"
+
+msgid "Settings"
+msgstr "Settings"
+
+// Status Badges
+msgid "Active"
+msgstr "Active"
+
+msgid "Inactive"
+msgstr "Inactive"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+// Nginx Cache
+msgid "Nginx Cache"
+msgstr "Nginx Cache"
+
+msgid "Cache Size"
+msgstr "Cache Size"
+
+msgid "Cached Files"
+msgstr "Cached Files"
+
+msgid "Cache Path"
+msgstr "Cache Path"
+
+msgid "Clear Cache"
+msgstr "Clear Cache"
+
+// PHP Opcache
+msgid "PHP Opcache"
+msgstr "PHP Opcache"
+
+msgid "Hit Rate"
+msgstr "Hit Rate"
+
+msgid "Memory Usage"
+msgstr "Memory Usage"
+
+msgid "Cached Scripts"
+msgstr "Cached Scripts"
+
+msgid "Reset Opcache"
+msgstr "Reset Opcache"
+
+msgid "Opcache is not enabled on this server"
+msgstr "Opcache is not enabled on this server"
+
+// Charts
+msgid "Live Performance Metrics"
+msgstr "Live Performance Metrics"
+
+msgid "Opcache Hit Rate"
+msgstr "Opcache Hit Rate"
+
+msgid "Memory Usage Trend"
+msgstr "Memory Usage Trend"
+
+msgid "Nginx Cache Size"
+msgstr "Nginx Cache Size"
+
+msgid "Cached Files Count"
+msgstr "Cached Files Count"
+
+msgid "Performance Over Time"
+msgstr "Performance Over Time"
+
+msgid "Opcache Hits vs Misses"
+msgstr "Opcache Hits vs Misses"
+
+// Analytics
+msgid "Cache Analytics"
+msgstr "Cache Analytics"
+
+msgid "View detailed analytics for your cache performance"
+msgstr "View detailed analytics for your cache performance"
+
+msgid "Current Summary"
+msgstr "Current Summary"
+
+msgid "Files Cached"
+msgstr "Files Cached"
+
+msgid "History"
+msgstr "History"
+
+msgid "Time"
+msgstr "Time"
+
+msgid "No data available yet"
+msgstr "No data available yet"
+
+// Dashboard Widget
+msgid "Cache Status"
+msgstr "Cache Status"
+
+msgid "Files:"
+msgstr "Files:"
+
+msgid "Scripts:"
+msgstr "Scripts:"
+
+msgid "Memory:"
+msgstr "Memory:"
+
+msgid "View Dashboard"
+msgstr "View Dashboard"
+
+// Settings
+msgid "Cache Manager Settings"
+msgstr "Cache Manager Settings"
+
+msgid "Configure your cache monitoring preferences"
+msgstr "Configure your cache monitoring preferences"
+
+msgid "Nginx Cache Settings"
+msgstr "Nginx Cache Settings"
+
+msgid "Configure your Nginx cache settings"
+msgstr "Configure your Nginx cache settings"
+
+msgid "Enable Nginx Cache Monitoring"
+msgstr "Enable Nginx Cache Monitoring"
+
+msgid "Enable Nginx cache monitoring"
+msgstr "Enable Nginx cache monitoring"
+
+msgid "Nginx Cache Path"
+msgstr "Nginx Cache Path"
+
+msgid "Path to your Nginx cache directory"
+msgstr "Path to your Nginx cache directory"
+
+msgid "Enable Notifications"
+msgstr "Enable Notifications"
+
+msgid "Enable admin notifications"
+msgstr "Enable admin notifications"
+
+msgid "Server Information"
+msgstr "Server Information"
+
+msgid "PHP Version"
+msgstr "PHP Version"
+
+msgid "Opcache Enabled"
+msgstr "Opcache Enabled"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "No"
+msgstr "No"
+
+msgid "Opcache Memory Limit"
+msgstr "Opcache Memory Limit"
+
+msgid "Max Accelerated Files"
+msgstr "Max Accelerated Files"
+
+msgid "About This Plugin"
+msgstr "About This Plugin"
+
+msgid "The Nginx Opcache Manager plugin helps you monitor and manage both Nginx cache and PHP Opcache directly from your WordPress dashboard. It provides real-time statistics and analytics to help optimize your server performance."
+msgstr "The Nginx Opcache Manager plugin helps you monitor and manage both Nginx cache and PHP Opcache directly from your WordPress dashboard. It provides real-time statistics and analytics to help optimize your server performance."
+
+msgid "Features"
+msgstr "Features"
+
+msgid "Real-time cache statistics"
+msgstr "Real-time cache statistics"
+
+msgid "Clear Nginx cache with one click"
+msgstr "Clear Nginx cache with one click"
+
+msgid "Reset PHP Opcache"
+msgstr "Reset PHP Opcache"
+
+msgid "Detailed analytics and charts"
+msgstr "Detailed analytics and charts"
+
+msgid "Historical data tracking"
+msgstr "Historical data tracking"
+
+msgid "Dashboard widget"
+msgstr "Dashboard widget"
+
+msgid "Support & Documentation"
+msgstr "Support & Documentation"
+
+msgid "For more information and support, visit:"
+msgstr "For more information and support, visit:"
+
+msgid "WordPress Plugins Directory"
+msgstr "WordPress Plugins Directory"
+
+msgid "Nginx Documentation"
+msgstr "Nginx Documentation"
+
+msgid "PHP Opcache Documentation"
+msgstr "PHP Opcache Documentation"
+
+msgid "Danger Zone"
+msgstr "Danger Zone"
+
+msgid "Clear All Data"
+msgstr "Clear All Data"
+
+msgid "This will permanently delete all stored statistics and analytics data. This action cannot be undone."
+msgstr "This will permanently delete all stored statistics and analytics data. This action cannot be undone."
+
+// Quick Links
+msgid "Quick Links"
+msgstr "Quick Links"
+
+msgid "View Analytics"
+msgstr "View Analytics"
+
+// Notifications
+msgid "Unauthorized"
+msgstr "Unauthorized"
+
+msgid "Are you sure you want to clear the Nginx cache?"
+msgstr "Are you sure you want to clear the Nginx cache?"
+
+msgid "Are you sure you want to reset Opcache?"
+msgstr "Are you sure you want to reset Opcache?"
+
+msgid "Are you sure you want to clear all data?"
+msgstr "Are you sure you want to clear all data?"
+
+msgid "Nginx cache cleared successfully!"
+msgstr "Nginx cache cleared successfully!"
+
+msgid "Opcache reset successfully!"
+msgstr "Opcache reset successfully!"
+
+msgid "Failed to clear cache. Please try again."
+msgstr "Failed to clear cache. Please try again."
+
+msgid "Failed to reset opcache. Please try again."
+msgstr "Failed to reset opcache. Please try again."
+
+msgid "Security check failed"
+msgstr "Security check failed"
+
+msgid "Insufficient permissions"
+msgstr "Insufficient permissions"
+
+msgid "No statistical data available yet. Data is collected hourly."
+msgstr "No statistical data available yet. Data is collected hourly."

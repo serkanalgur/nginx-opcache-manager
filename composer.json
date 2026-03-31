@@ -1,0 +1,47 @@
+{
+    "name": "serkanalgur/nginx-opcache-manager",
+    "description": "WordPress plugin to manage and monitor Nginx cache and PHP Opcache with analytics",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Serkan Algur",
+            "email": "info@example.com",
+            "homepage": "https://github.com/serkanalgur"
+        }
+    ],
+    "keywords": [
+        "wordpress",
+        "plugin",
+        "nginx",
+        "cache",
+        "opcache",
+        "php",
+        "optimization"
+    ],
+    "homepage": "https://github.com/serkanalgur/nginx-opcache-manager",
+    "support": {
+        "issues": "https://github.com/example/nginx-opcache-manager/issues",
+        "source": "https://github.com/example/nginx-opcache-manager"
+    },
+    "require": {
+        "php": ">=7.2",
+        "composer/installers": "^1.0||^2.0"
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^2.3",
+        "squizlabs/php_codesniffer": "^3.5",
+        "phpstan/phpstan": "^0.12",
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nginx_Opcache_Manager\\": "includes/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    }
+}
