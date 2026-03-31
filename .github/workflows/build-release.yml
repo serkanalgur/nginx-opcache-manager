@@ -1,0 +1,66 @@
+name: "Build Release"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: "Build and Release"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          extensions: json, json, curl, zip
+          tools: composer
+
+      - name: Install Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Get tag version
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build plugin
+        run: |
+          mkdir -p build/nginx-opcache-manager
+
+          # Copy files to release directory
+          rsync -av . build/nginx-opcache-manager \
+            --exclude=build \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=.gitignore \
+            --exclude=composer.lock \
+            --exclude=package-lock.json \
+            --exclude=.env.example \
+            --exclude=.DS_Store \
+            --exclude=node_modules \
+            --exclude=vendor \
+            --exclude=*.md
+
+          # Copy vendor directory with production dependencies
+          cp -r vendor build/nginx-opcache-manager/
+
+          # Create ZIP file
+          cd build
+          zip -r "../nginx-opcache-manager-${{ steps.vars.outputs.tag }}.zip" nginx-opcache-manager/
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "nginx-opcache-manager-${{ steps.vars.outputs.tag }}.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          generateReleaseNotes: true
+          tag: v${{ steps.vars.outputs.tag }}
+          name: "Version ${{ steps.vars.outputs.tag }}"
+          draft: false
+          prerelease: false

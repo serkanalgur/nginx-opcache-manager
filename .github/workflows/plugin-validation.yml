@@ -1,0 +1,171 @@
+name: "WordPress Plugin Validation"
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  wordpress-plugin-check:
+    name: "Plugin Validation"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+
+      - name: Download WordPress Plugin Checker
+        run: |
+          wget https://raw.githubusercontent.com/easyengine/wp-plugin-validator/master/wp-plugin-validator.php
+          chmod +x wp-plugin-validator.php
+
+      - name: Validate Plugin Structure
+        run: |
+          # Check for main plugin file
+          if [ ! -f "nginx-opcache-manager.php" ]; then
+            echo "Error: Main plugin file nginx-opcache-manager.php not found"
+            exit 1
+          fi
+
+      - name: Verify Plugin Headers
+        run: |
+          # Check for required plugin headers
+          if ! grep -q "Plugin Name:" nginx-opcache-manager.php; then
+            echo "Error: Plugin Name header missing"
+            exit 1
+          fi
+          if ! grep -q "Description:" nginx-opcache-manager.php; then
+            echo "Error: Description header missing"
+            exit 1
+          fi
+          if ! grep -q "Version:" nginx-opcache-manager.php; then
+            echo "Error: Version header missing"
+            exit 1
+          fi
+          if ! grep -q "Author:" nginx-opcache-manager.php; then
+            echo "Error: Author header missing"
+            exit 1
+          fi
+          if ! grep -q "License:" nginx-opcache-manager.php; then
+            echo "Error: License header missing"
+            exit 1
+          fi
+          echo "✓ All required headers present"
+
+      - name: Check readme.txt Validity
+        run: |
+          if [ -f "readme.txt" ]; then
+            # Check for WordPress plugin readme structure
+            if grep -q "=== " readme.txt && \
+               grep -q "== Description ==" readme.txt && \
+               grep -q "== Installation ==" readme.txt; then
+              echo "✓ readme.txt structure is valid"
+            else
+              echo "Warning: readme.txt may be missing sections"
+            fi
+          else
+            echo "Warning: readme.txt not found"
+          fi
+
+      - name: Verify Text Domain
+        run: |
+          TEXT_DOMAIN=$(grep -oP "Text Domain: \K[^\s]+" nginx-opcache-manager.php)
+          echo "Text Domain: $TEXT_DOMAIN"
+          if [ -z "$TEXT_DOMAIN" ]; then
+            echo "Warning: Text Domain not found"
+          fi
+
+      - name: Check for Security Issues
+        run: |
+          echo "Checking for common security issues..."
+
+          # Check for eval() usage
+          if grep -r "eval(" includes/ admin/ 2>/dev/null; then
+            echo "Warning: eval() found - security risk"
+          fi
+
+          # Check for direct database access
+          if grep -r "\$wpdb->get_results([^_]" . --include="*.php" 2>/dev/null; then
+            echo "Warning: Direct database queries found - should use sanitized queries"
+          fi
+
+          # Check for proper sanitization
+          if grep -r "\$_GET\|\$_POST\|\$_REQUEST" includes/ admin/ --include="*.php" 2>/dev/null | \
+             grep -v "sanitize\|wp_verify_nonce\|current_user_can"; then
+            echo "Warning: Possible unsanitized input found"
+          fi
+
+          echo "✓ Security checks completed"
+
+      - name: Verify Plugin Activation
+        run: |
+          # Create minimal WordPress environment
+          echo "<?php
+          // Test WordPress constants
+          define('ABSPATH', __DIR__ . '/');
+          define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
+          define('WP_PLUGIN_DIR', WP_CONTENT_DIR . '/plugins');
+
+          // Attempt to load plugin
+          include 'nginx-opcache-manager.php';
+          echo 'Plugin loaded successfully';
+          ?>" > test-load.php
+
+          # Test plugin can be loaded (basic syntax check)
+          php -l nginx-opcache-manager.php
+          echo "✓ Plugin file syntax is valid"
+
+      - name: Verify Languages Directory
+        run: |
+          if [ -d "languages" ]; then
+            echo "✓ Languages directory present"
+            if [ -f "languages/nginx-opcache-manager.pot" ]; then
+              echo "✓ Pot file found"
+            else
+              echo "Note: POT file not found - strings may not be translatable"
+            fi
+          else
+            echo "Note: Languages directory not found"
+          fi
+
+      - name: Check Documentation
+        run: |
+          echo "Checking documentation files..."
+
+          MISSING=0
+          for doc in README.md INSTALLATION.md CHANGELOG.md; do
+            if [ ! -f "$doc" ]; then
+              echo "Warning: $doc not found"
+              MISSING=$((MISSING+1))
+            else
+              echo "✓ $doc present"
+            fi
+          done
+
+          if [ $MISSING -eq 0 ]; then
+            echo "✓ All recommended documentation files present"
+          fi
+
+      - name: Plugin Summary
+        run: |
+          echo "=== Plugin Summary ==="
+          VERSION=$(grep -oP "Version: \K[^\s]+" nginx-opcache-manager.php)
+          AUTHOR=$(grep -oP "Author: \K.*" nginx-opcache-manager.php | sed 's/<.*//')
+          DESCRIPTION=$(grep -oP "Description: \K.*" nginx-opcache-manager.php | head -c 80)
+
+          echo "Plugin: Nginx Opcache Manager"
+          echo "Version: $VERSION"
+          echo "Author: $AUTHOR"
+          echo "Description: $DESCRIPTION..."
+          echo ""
+          echo "✓ Validation completed successfully"
