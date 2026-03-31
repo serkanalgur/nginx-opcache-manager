@@ -52,16 +52,13 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "7.4"
-          tools: composer, phpcs
+          tools: composer
 
       - name: Install Dependencies
         run: composer install --no-interaction
 
-      - name: Configure PHPCS
-        run: phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
-
       - name: Run PHPCS
-        run: phpcs --standard=WordPress --report=summary --colors --extensions=php ./includes ./admin ./nginx-opcache-manager.php
+        run: vendor/bin/phpcs --standard=WordPress --report=summary --colors --extensions=php ./includes ./admin ./nginx-opcache-manager.php
         continue-on-error: true
 
   composer-deps:
