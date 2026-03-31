@@ -24,11 +24,6 @@ jobs:
         with:
           php-version: "7.4"
 
-      - name: Download WordPress Plugin Checker
-        run: |
-          wget https://raw.githubusercontent.com/easyengine/wp-plugin-validator/master/wp-plugin-validator.php
-          chmod +x wp-plugin-validator.php
-
       - name: Validate Plugin Structure
         run: |
           # Check for main plugin file
