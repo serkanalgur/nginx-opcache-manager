@@ -54,8 +54,8 @@ jobs:
           php-version: "7.4"
           tools: composer, phpcs
 
-      - name: Install WordPress Coding Standards
-        run: composer require --dev wp-coding-standards/wpcs
+      - name: Install Dependencies
+        run: composer install
 
       - name: Configure PHPCS
         run: phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
