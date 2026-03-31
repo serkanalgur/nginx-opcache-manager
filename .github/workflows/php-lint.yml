@@ -55,7 +55,7 @@ jobs:
           tools: composer, phpcs
 
       - name: Install Dependencies
-        run: composer install --no-interaction --no-audit
+        run: composer install --no-interaction
 
       - name: Configure PHPCS
         run: phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
@@ -79,7 +79,7 @@ jobs:
           tools: composer
 
       - name: Install Dependencies
-        run: composer install --no-interaction --no-audit
+        run: composer install --no-interaction
 
       - name: Verify Composer Installation
         run: composer --version
