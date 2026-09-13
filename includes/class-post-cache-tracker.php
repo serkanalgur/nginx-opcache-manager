@@ -15,6 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 	/**
+	 * Post IDs already flushed during this request (prevents double purge).
+	 *
+	 * @var array
+	 */
+	private static $flushed_in_request = array();
+
+	/**
 	 * Constructor - register hooks
 	 */
 	public function __construct() {
@@ -31,6 +38,13 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'comment_post', array( $this, 'on_comment_post' ), 10, 2 );
 		add_action( 'wp_insert_comment', array( $this, 'on_comment_insert' ), 10, 2 );
 		add_action( 'delete_comment', array( $this, 'on_comment_delete' ), 10, 2 );
+
+		// WooCommerce product actions (only effective when WooCommerce is active).
+		add_action( 'woocommerce_update_product', array( $this, 'on_woocommerce_product_change' ), 10, 1 );
+		add_action( 'woocommerce_new_product', array( $this, 'on_woocommerce_product_change' ), 10, 1 );
+		add_action( 'woocommerce_product_set_stock', array( $this, 'on_woocommerce_product_stock_change' ), 10, 1 );
+		add_action( 'woocommerce_variation_set_stock', array( $this, 'on_woocommerce_variation_stock_change' ), 10, 1 );
+		add_action( 'woocommerce_save_product_variation', array( $this, 'on_woocommerce_variation_save' ), 10, 2 );
 	}
 
 	/**
@@ -124,14 +138,154 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	}
 
 	/**
+	 * Handle WooCommerce product create/update.
+	 *
+	 * @param int $product_id Product ID.
+	 */
+	public function on_woocommerce_product_change( $product_id ) {
+		if ( ! $this->is_woocommerce_flush_enabled() ) {
+			return;
+		}
+
+		$this->flush_product_cache( (int) $product_id, 'product_change' );
+	}
+
+	/**
+	 * Handle WooCommerce product stock change.
+	 *
+	 * @param object $product Product object.
+	 */
+	public function on_woocommerce_product_stock_change( $product ) {
+		if ( ! $this->is_woocommerce_flush_enabled() ) {
+			return;
+		}
+
+		$product_id = is_object( $product ) && isset( $product->id ) ? (int) $product->id : (int) $product;
+		if ( method_exists( $product, 'get_id' ) ) {
+			$product_id = (int) $product->get_id();
+		}
+
+		if ( $product_id > 0 ) {
+			$this->flush_product_cache( $product_id, 'product_stock_change' );
+		}
+	}
+
+	/**
+	 * Handle WooCommerce variation stock change (flush parent product).
+	 *
+	 * @param object $variation Variation object.
+	 */
+	public function on_woocommerce_variation_stock_change( $variation ) {
+		if ( ! $this->is_woocommerce_flush_enabled() ) {
+			return;
+		}
+
+		$parent_id = 0;
+		if ( is_object( $variation ) && method_exists( $variation, 'get_parent_id' ) ) {
+			$parent_id = (int) $variation->get_parent_id();
+		}
+
+		if ( $parent_id > 0 ) {
+			$this->flush_product_cache( $parent_id, 'product_stock_change' );
+		}
+	}
+
+	/**
+	 * Handle WooCommerce variation save (flush parent product).
+	 *
+	 * @param int $variation_id Variation ID.
+	 * @param int $loop Loop index (unused).
+	 */
+	public function on_woocommerce_variation_save( $variation_id, $loop ) {
+		if ( ! $this->is_woocommerce_flush_enabled() ) {
+			return;
+		}
+
+		$parent_id = wp_get_post_parent_id( (int) $variation_id );
+		if ( $parent_id > 0 ) {
+			$this->flush_product_cache( $parent_id, 'product_change' );
+		} else {
+			$this->flush_product_cache( (int) $variation_id, 'product_change' );
+		}
+	}
+
+	/**
+	 * Check if WooCommerce auto-flush is enabled.
+	 *
+	 * @return bool
+	 */
+	private function is_woocommerce_flush_enabled() {
+		return (bool) get_option( 'nom_enable_woocommerce_flush', true );
+	}
+
+	/**
+	 * Flush cache for a WooCommerce product (product + shop + taxonomies).
+	 *
+	 * @param int    $product_id Product ID.
+	 * @param string $action Log action.
+	 */
+	public function flush_product_cache( $product_id, $action = 'product_change' ) {
+		$product_id = (int) $product_id;
+		if ( $product_id <= 0 ) {
+			return;
+		}
+
+		// Dedupe within the same request (save_post + WC hooks often fire together).
+		$dedupe_key = 'product:' . $product_id;
+		if ( isset( self::$flushed_in_request[ $dedupe_key ] ) ) {
+			return;
+		}
+		self::$flushed_in_request[ $dedupe_key ] = true;
+
+		$post = get_post( $product_id );
+		if ( ! $post ) {
+			return;
+		}
+
+		$urls_to_flush = $this->get_product_related_urls( $product_id, $post );
+
+		$this->flush_cache_for_urls( $urls_to_flush );
+
+		$this->log_cache_flush( $action, $product_id, $post->post_title );
+	}
+
+	/**
 	 * Flush cache for specific post
 	 */
 	private function flush_post_cache( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+
 		$post = get_post( $post_id );
 
 		if ( ! $post ) {
 			return;
 		}
+
+		// WooCommerce products (and variations) get product-specific URL handling.
+		if ( in_array( $post->post_type, array( 'product', 'product_variation' ), true ) ) {
+			if ( ! $this->is_woocommerce_flush_enabled() ) {
+				return;
+			}
+
+			if ( 'product_variation' === $post->post_type ) {
+				$parent_id = wp_get_post_parent_id( $post_id );
+				$this->flush_product_cache( $parent_id > 0 ? $parent_id : $post_id, 'product_change' );
+				return;
+			}
+
+			$this->flush_product_cache( $post_id, 'post_change' );
+			return;
+		}
+
+		// Dedupe generic posts within the same request.
+		$dedupe_key = 'post_change:' . $post_id;
+		if ( isset( self::$flushed_in_request[ $dedupe_key ] ) ) {
+			return;
+		}
+		self::$flushed_in_request[ $dedupe_key ] = true;
 
 		// Get all related URLs
 		$urls_to_flush = $this->get_post_related_urls( $post );
@@ -147,6 +301,15 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Get all URLs related to a post
 	 */
 	private function get_post_related_urls( $post ) {
+		// Delegate WooCommerce products to product-specific URL collection.
+		if ( in_array( $post->post_type, array( 'product', 'product_variation' ), true ) ) {
+			$product_id = 'product_variation' === $post->post_type ? (int) wp_get_post_parent_id( $post->ID ) : (int) $post->ID;
+			if ( $product_id <= 0 ) {
+				$product_id = (int) $post->ID;
+			}
+			return $this->get_product_related_urls( $product_id, $post );
+		}
+
 		$urls = array();
 
 		// Post permalink
@@ -192,6 +355,78 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 		// Filter URLs (allow customization)
 		return apply_filters( 'nom_post_cache_urls', $urls, $post );
+	}
+
+	/**
+	 * Get all URLs related to a WooCommerce product.
+	 *
+	 * Covers the product page itself, shop page, product categories/tags
+	 * and the homepage so price/stock changes are visible immediately.
+	 *
+	 * @param int      $product_id Product ID.
+	 * @param \WP_Post $post Product post object.
+	 * @return array
+	 */
+	private function get_product_related_urls( $product_id, $post ) {
+		$urls = array();
+
+		$permalink = get_permalink( $product_id );
+		if ( $permalink ) {
+			$urls[] = $permalink;
+		}
+
+		// Shop page.
+		if ( function_exists( 'wc_get_page_id' ) ) {
+			$shop_page_id = (int) wc_get_page_id( 'shop' );
+			if ( $shop_page_id > 0 ) {
+				$shop_url = get_permalink( $shop_page_id );
+				if ( $shop_url ) {
+					$urls[] = $shop_url;
+				}
+			}
+		}
+
+		// Product categories.
+		$cat_terms = get_the_terms( $product_id, 'product_cat' );
+		if ( $cat_terms && ! is_wp_error( $cat_terms ) ) {
+			foreach ( $cat_terms as $term ) {
+				$term_link = get_term_link( $term );
+				if ( ! is_wp_error( $term_link ) ) {
+					$urls[] = $term_link;
+				}
+			}
+		}
+
+		// Product tags.
+		$tag_terms = get_the_terms( $product_id, 'product_tag' );
+		if ( $tag_terms && ! is_wp_error( $tag_terms ) ) {
+			foreach ( $tag_terms as $term ) {
+				$term_link = get_term_link( $term );
+				if ( ! is_wp_error( $term_link ) ) {
+					$urls[] = $term_link;
+				}
+			}
+		}
+
+		// Product archive (shop post type archive fallback).
+		$archive_link = get_post_type_archive_link( 'product' );
+		if ( $archive_link ) {
+			$urls[] = $archive_link;
+		}
+
+		// Home page.
+		$urls[] = home_url( '/' );
+
+		$urls = array_unique( array_filter( $urls ) );
+
+		/**
+		 * Filter WooCommerce product cache URLs.
+		 *
+		 * @param array    $urls Product-related URLs.
+		 * @param int      $product_id Product ID.
+		 * @param \WP_Post $post Product post object.
+		 */
+		return apply_filters( 'nom_product_cache_urls', $urls, $product_id, $post );
 	}
 
 	/**
@@ -263,17 +498,26 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	public static function get_cache_stats_by_type() {
 		$logs = self::get_flush_logs();
 		$stats = array(
-			'post_changes'  => 0,
-			'term_changes'  => 0,
-			'comment_changes' => 0,
+			'post_changes'     => 0,
+			'product_changes'  => 0,
+			'term_changes'     => 0,
+			'comment_changes'  => 0,
+			'scheduled_purges' => 0,
 		);
 
 		foreach ( $logs as $log ) {
-			if ( strpos( $log['action'], 'post' ) !== false ) {
+			if ( ! isset( $log['action'] ) ) {
+				continue;
+			}
+			if ( 'scheduled_purge' === $log['action'] ) {
+				$stats['scheduled_purges']++;
+			} elseif ( false !== strpos( $log['action'], 'product' ) ) {
+				$stats['product_changes']++;
+			} elseif ( false !== strpos( $log['action'], 'post' ) ) {
 				$stats['post_changes']++;
-			} elseif ( strpos( $log['action'], 'term' ) !== false ) {
+			} elseif ( false !== strpos( $log['action'], 'term' ) ) {
 				$stats['term_changes']++;
-			} elseif ( strpos( $log['action'], 'comment' ) !== false ) {
+			} elseif ( false !== strpos( $log['action'], 'comment' ) ) {
 				$stats['comment_changes']++;
 			}
 		}
