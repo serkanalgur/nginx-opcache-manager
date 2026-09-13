@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,13 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.2.0 =
+
+* **Added** Scheduled cache purge (hourly / 6h / 12h / daily / weekly) with target selection (Nginx / Opcache / both)
+* **Added** WooCommerce support: product, variation and stock changes flush product, shop, category/tag and homepage cache
+* **Added** Separate WooCommerce auto-flush setting with request-level dedupe against double purges
+* **Improved** Flush-log stats now count product changes and scheduled purges separately
 
 = 1.1.0 - March 31, 2026 =
 

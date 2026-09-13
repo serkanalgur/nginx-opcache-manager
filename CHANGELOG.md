@@ -4,6 +4,24 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-13
+
+### Added
+- **Scheduled Cache Purge**: Automatically purge cache on a schedule via WP-Cron
+  - Intervals: hourly, every 6 hours, every 12 hours, daily, weekly
+  - Target selection: Nginx cache only, Opcache only, or both
+  - Next/last run timestamps shown on the settings page
+  - Scheduled runs are recorded in the flush log (`scheduled_purge`)
+- **WooCommerce Support**: Flush product-related cache when products change
+  - Covers product save, new product, variations and stock updates
+  - Purges product page, shop page, product categories/tags and homepage
+  - Separate "Auto-Flush Product Cache" setting (takes effect once WooCommerce is active)
+  - Request-level dedupe prevents double purges when `save_post` and WC hooks fire together
+  - New `nom_product_cache_urls` filter for customizing product URLs
+
+### Improved
+- Flush-log statistics now count product changes and scheduled purges separately
+
 ## [1.1.0] - 2026-03-31
 
 ### Added

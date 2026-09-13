@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Nginx Opcache Manager
  * Description: Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Serkan Algur
  * Author URI: https://github.com/serkanalgur
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants
  */
-define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.1.0' );
+define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.2.0' );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_FILE', __FILE__ );
@@ -63,6 +63,7 @@ class Nginx_Opcache_Manager {
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-nginx-cache-manager.php';
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-opcache-manager.php';
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-cache-stats.php';
+		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-scheduler.php';
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-post-cache-tracker.php';
 
 		// Admin classes
@@ -82,6 +83,10 @@ class Nginx_Opcache_Manager {
 
 		// Internationalization
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+
+		// Scheduled purges (must run on every request so WP-Cron fires).
+		$scheduler = new Nginx_Opcache_Manager_Scheduler();
+		$scheduler->init();
 
 		// Initialize post cache tracker
 		if ( get_option( 'nom_enable_post_cache_flush', true ) ) {
@@ -111,6 +116,16 @@ class Nginx_Opcache_Manager {
 		$stats_manager = new Nginx_Opcache_Manager_Stats();
 		$stats_manager->initialize();
 
+		// Set defaults for new automation options (do not override existing values).
+		add_option( 'nom_enable_woocommerce_flush', true );
+		add_option( 'nom_schedule_enabled', false );
+		add_option( 'nom_schedule_interval', 'six_hours' );
+		add_option( 'nom_schedule_targets', 'both' );
+
+		// Schedule purge if already enabled.
+		$scheduler = new Nginx_Opcache_Manager_Scheduler();
+		$scheduler->maybe_reschedule();
+
 		// Flush rewrite rules
 		flush_rewrite_rules();
 	}
@@ -119,6 +134,9 @@ class Nginx_Opcache_Manager {
 	 * Deactivate plugin
 	 */
 	public function deactivate() {
+		$scheduler = new Nginx_Opcache_Manager_Scheduler();
+		$scheduler->unschedule();
+
 		// Cleanup if needed
 		flush_rewrite_rules();
 	}

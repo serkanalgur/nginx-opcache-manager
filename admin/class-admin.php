@@ -86,14 +86,36 @@ class Nginx_Opcache_Manager_Admin {
 		register_setting( 'nom_settings_group', 'nom_nginx_cache_path' );
 		register_setting( 'nom_settings_group', 'nom_enable_notifications' );
 		register_setting( 'nom_settings_group', 'nom_enable_post_cache_flush' );
+		register_setting( 'nom_settings_group', 'nom_enable_woocommerce_flush', array( 'sanitize_callback' => array( $this, 'sanitize_checkbox' ) ) );
 		register_setting( 'nom_settings_group', 'nom_fastcgi_cache_key_schema' );
+		register_setting(
+			'nom_settings_group',
+			'nom_schedule_enabled',
+			array( 'sanitize_callback' => array( $this, 'sanitize_checkbox' ) )
+		);
+		register_setting(
+			'nom_settings_group',
+			'nom_schedule_interval',
+			array( 'sanitize_callback' => array( 'Nginx_Opcache_Manager_Scheduler', 'sanitize_interval' ) )
+		);
+		register_setting(
+			'nom_settings_group',
+			'nom_schedule_targets',
+			array( 'sanitize_callback' => array( 'Nginx_Opcache_Manager_Scheduler', 'sanitize_targets' ) )
+		);
 
 		add_settings_section( 'nom_nginx_settings', __( 'Nginx Cache Settings', 'nginx-opcache-manager' ), array( $this, 'nginx_section_callback' ), 'nom_settings' );
 		add_settings_field( 'nom_nginx_cache_enabled', __( 'Enable Nginx Cache Monitoring', 'nginx-opcache-manager' ), array( $this, 'cache_enabled_callback' ), 'nom_settings', 'nom_nginx_settings' );
 		add_settings_field( 'nom_nginx_cache_path', __( 'Nginx Cache Path', 'nginx-opcache-manager' ), array( $this, 'cache_path_callback' ), 'nom_settings', 'nom_nginx_settings' );
 		add_settings_field( 'nom_fastcgi_cache_key_schema', __( 'Fastcgi Cache Key Schema', 'nginx-opcache-manager' ), array( $this, 'fastcgi_cache_key_schema_callback' ), 'nom_settings', 'nom_nginx_settings' );
 		add_settings_field( 'nom_enable_post_cache_flush', __( 'Auto-Flush Cache on Content Changes', 'nginx-opcache-manager' ), array( $this, 'post_cache_flush_callback' ), 'nom_settings', 'nom_nginx_settings' );
+		add_settings_field( 'nom_enable_woocommerce_flush', __( 'Auto-Flush Product Cache (WooCommerce)', 'nginx-opcache-manager' ), array( $this, 'woocommerce_flush_callback' ), 'nom_settings', 'nom_nginx_settings' );
 		add_settings_field( 'nom_enable_notifications', __( 'Enable Notifications', 'nginx-opcache-manager' ), array( $this, 'notifications_callback' ), 'nom_settings', 'nom_nginx_settings' );
+
+		add_settings_section( 'nom_schedule_settings', __( 'Scheduled Cache Purge', 'nginx-opcache-manager' ), array( $this, 'schedule_section_callback' ), 'nom_settings' );
+		add_settings_field( 'nom_schedule_enabled', __( 'Enable Scheduled Purge', 'nginx-opcache-manager' ), array( $this, 'schedule_enabled_callback' ), 'nom_settings', 'nom_schedule_settings' );
+		add_settings_field( 'nom_schedule_interval', __( 'Purge Interval', 'nginx-opcache-manager' ), array( $this, 'schedule_interval_callback' ), 'nom_settings', 'nom_schedule_settings' );
+		add_settings_field( 'nom_schedule_targets', __( 'Purge Targets', 'nginx-opcache-manager' ), array( $this, 'schedule_targets_callback' ), 'nom_settings', 'nom_schedule_settings' );
 	}
 
 	/**
@@ -207,6 +229,96 @@ class Nginx_Opcache_Manager_Admin {
     <?php esc_html_e( 'This will clear cache for the modified post, archives, and homepage.', 'nginx-opcache-manager' ); ?>
 </p>
 <?php
+	}
+
+	/**
+	 * Sanitize checkbox value to 0/1.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return int
+	 */
+	public function sanitize_checkbox( $value ) {
+		return $value ? 1 : 0;
+	}
+
+	/**
+	 * Schedule section callback
+	 */
+	public function schedule_section_callback() {
+		echo '<p>' . esc_html__( 'Automatically purge cache on a schedule (e.g. every 6 or 12 hours). Requires WP-Cron to run.', 'nginx-opcache-manager' ) . '</p>';
+	}
+
+	/**
+	 * Schedule enabled field callback
+	 */
+	public function schedule_enabled_callback() {
+		$enabled = get_option( 'nom_schedule_enabled', false );
+		?>
+<input type="checkbox" name="nom_schedule_enabled" value="1" <?php checked( $enabled, 1 ); ?> />
+<label><?php esc_html_e( 'Enable scheduled cache purge', 'nginx-opcache-manager' ); ?></label>
+		<?php
+		if ( class_exists( 'Nginx_Opcache_Manager_Scheduler' ) ) {
+			$next = Nginx_Opcache_Manager_Scheduler::get_next_run();
+			$last = Nginx_Opcache_Manager_Scheduler::get_last_run();
+			echo '<p class="description">';
+			if ( $next ) {
+				echo esc_html__( 'Next run:', 'nginx-opcache-manager' ) . ' ' . esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $next ), get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) );
+			} else {
+				esc_html_e( 'Not scheduled yet. Save settings to schedule.', 'nginx-opcache-manager' );
+			}
+			if ( ! empty( $last ) ) {
+				echo '<br />' . esc_html__( 'Last run:', 'nginx-opcache-manager' ) . ' ' . esc_html( $last );
+			}
+			echo '</p>';
+		}
+	}
+
+	/**
+	 * Schedule interval field callback
+	 */
+	public function schedule_interval_callback() {
+		$current = class_exists( 'Nginx_Opcache_Manager_Scheduler' ) ? Nginx_Opcache_Manager_Scheduler::get_interval() : 'six_hours';
+		$intervals = class_exists( 'Nginx_Opcache_Manager_Scheduler' ) ? Nginx_Opcache_Manager_Scheduler::get_intervals() : array();
+		?>
+<select name="nom_schedule_interval">
+		<?php foreach ( $intervals as $slug => $data ) : ?>
+	<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current, $slug ); ?>><?php echo esc_html( $data['label'] ); ?></option>
+	<?php endforeach; ?>
+</select>
+<p class="description"><?php esc_html_e( 'How often the full purge should run.', 'nginx-opcache-manager' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Schedule targets field callback
+	 */
+	public function schedule_targets_callback() {
+		$current = class_exists( 'Nginx_Opcache_Manager_Scheduler' ) ? Nginx_Opcache_Manager_Scheduler::get_targets_option() : 'both';
+		$targets = class_exists( 'Nginx_Opcache_Manager_Scheduler' ) ? Nginx_Opcache_Manager_Scheduler::get_targets() : array();
+		?>
+<select name="nom_schedule_targets">
+		<?php foreach ( $targets as $slug => $label ) : ?>
+	<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current, $slug ); ?>><?php echo esc_html( $label ); ?></option>
+	<?php endforeach; ?>
+</select>
+<p class="description"><?php esc_html_e( 'Which caches the scheduled purge should clear.', 'nginx-opcache-manager' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * WooCommerce flush field callback
+	 */
+	public function woocommerce_flush_callback() {
+		$enabled = get_option( 'nom_enable_woocommerce_flush', true );
+		?>
+<input type="checkbox" name="nom_enable_woocommerce_flush" value="1" <?php checked( $enabled, 1 ); ?> />
+<label><?php esc_html_e( 'Flush product, shop and category cache when WooCommerce products or stock change', 'nginx-opcache-manager' ); ?></label>
+		<?php if ( ! function_exists( 'WC' ) && ! class_exists( 'WooCommerce' ) ) : ?>
+<p class="description"><?php esc_html_e( 'WooCommerce is not active. This setting takes effect once WooCommerce is installed.', 'nginx-opcache-manager' ); ?></p>
+	<?php else : ?>
+<p class="description"><?php esc_html_e( 'Covers product save, new product, variations and stock updates.', 'nginx-opcache-manager' ); ?></p>
+	<?php endif; ?>
+		<?php
 	}
 
 	/**
