@@ -18,11 +18,23 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "7.4"
-          extensions: json, json, curl, zip
+          extensions: json, curl, zip
           tools: composer
 
-      - name: Install Dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install PHP Dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Build React Admin Panel
+        run: npm run build
 
       - name: Get tag version
         id: vars
@@ -34,7 +46,6 @@ jobs:
 
           # Copy files to release directory
           rsync -av . build/nginx-opcache-manager \
-            --exclude=build \
             --exclude=.git \
             --exclude=.github \
             --exclude=.gitignore \
@@ -44,6 +55,9 @@ jobs:
             --exclude=.DS_Store \
             --exclude=node_modules \
             --exclude=vendor \
+            --exclude=src \
+            --exclude=webpack.config.js \
+            --exclude=.editorconfig \
             --exclude=*.md
 
           # Copy vendor directory with production dependencies
