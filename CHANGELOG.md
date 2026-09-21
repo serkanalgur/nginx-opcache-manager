@@ -4,6 +4,16 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-09-21
+
+### Fixed
+- **Admin Panel Empty Page**: Fixed React admin panel not rendering on admin pages
+  - Changed from `registerPlugin` (block editor only) to `createRoot` (standard DOM rendering)
+  - Admin panel now correctly mounts to `#nom-react-root` element
+- **CSS 404 Error**: Fixed incorrect CSS file reference in admin enqueue
+  - Build outputs `index.css`, not `style.css`
+  - Updated `wp_enqueue_style` to use correct filename
+
 ## [1.3.0] - 2026-09-21
 
 ### Added

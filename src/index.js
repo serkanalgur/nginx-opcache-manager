@@ -4,10 +4,8 @@
  * @package Nginx_Opcache_Manager
  */
 
-import { registerPlugin } from '@wordpress/plugins';
-import { PluginSidebar } from '@wordpress/editor';
 import { __ } from '@wordpress/i18n';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, createRoot } from '@wordpress/element';
 import {
 	TabPanel,
 	Panel,
@@ -603,9 +601,12 @@ function App() {
 }
 
 /**
- * Register the plugin
+ * Initialize React app when DOM is ready
  */
-registerPlugin('nginx-opcache-manager', {
-	render: App,
-	icon: 'shield',
+document.addEventListener('DOMContentLoaded', () => {
+	const rootElement = document.getElementById('nom-react-root');
+	if (rootElement) {
+		const root = createRoot(rootElement);
+		root.render(<App />);
+	}
 });

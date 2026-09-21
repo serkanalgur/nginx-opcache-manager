@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,12 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.3.1 - September 21, 2026 =
+
+* **Fixed** React admin panel not rendering on admin pages (empty page issue)
+* **Fixed** CSS 404 error - incorrect file reference in wp_enqueue_style
+* **Improved** Admin panel now uses standard DOM rendering instead of block editor plugin API
 
 = 1.3.0 - September 21, 2026 =
 

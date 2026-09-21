@@ -259,6 +259,29 @@ For issues and feature requests, please visit the plugin's support page.
 
 ## Changelog
 
+### Version 1.3.1
+- **Fixed** React admin panel not rendering on admin pages (empty page issue)
+- **Fixed** CSS 404 error - incorrect file reference in wp_enqueue_style
+- **Improved** Admin panel now uses standard DOM rendering instead of block editor plugin API
+
+### Version 1.3.0
+- **Added** REST API layer with full CRUD endpoints under `nom/v1` namespace
+- **Added** React-powered admin panel with modern UI components
+- **Added** Dashboard with real-time stats, Chart.js visualizations, and activity logs
+- **Added** Analytics page with historical performance charts
+- **Added** Settings page with modern form controls (toggles, selects, text inputs)
+- **Added** Build system via @wordpress/scripts for production-ready assets
+- **Added** Responsive design for mobile and desktop
+- **Changed** Admin panel now uses React instead of PHP templates
+- **Changed** Chart.js bundled with plugin instead of CDN
+- **Improved** Modern UI with card-based layout and smooth transitions
+
+### Version 1.2.0
+- **Added** Scheduled cache purge (hourly / 6h / 12h / daily / weekly)
+- **Added** WooCommerce support: product, variation and stock changes flush cache
+- **Added** Separate WooCommerce auto-flush setting
+- **Improved** Flush-log stats now count product changes and scheduled purges separately
+
 ### Version 1.1.0
 - **Added** Cache Flush Activity Logging with persistent database storage
   - Track all cache deletion operations with success/failure status
