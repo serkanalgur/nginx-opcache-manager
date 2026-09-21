@@ -24,7 +24,6 @@ yarn.lock
 
 # Build files
 dist/
-build/
 
 # Temporary files
 *.tmp

@@ -65,6 +65,7 @@ class Nginx_Opcache_Manager {
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-cache-stats.php';
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-scheduler.php';
 		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-post-cache-tracker.php';
+		require_once NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'includes/class-rest-api.php';
 
 		// Admin classes
 		if ( is_admin() ) {
@@ -93,12 +94,15 @@ class Nginx_Opcache_Manager {
 			new Nginx_Opcache_Manager_Post_Cache_Tracker();
 		}
 
+		// Register REST API routes
+		add_action( 'rest_api_init', array( new Nginx_Opcache_Manager_REST_API(), 'register_routes' ) );
+
 		// Admin setup
 		if ( is_admin() ) {
 			add_action( 'plugins_loaded', array( $this, 'init_admin' ) );
 		}
 
-		// Register AJAX handlers
+		// Register AJAX handlers (legacy fallback)
 		add_action( 'wp_ajax_nom_get_stats', array( $this, 'ajax_get_stats' ) );
 		add_action( 'wp_ajax_nom_clear_cache', array( $this, 'ajax_clear_cache' ) );
 		add_action( 'wp_ajax_nom_reset_opcache', array( $this, 'ajax_reset_opcache' ) );
