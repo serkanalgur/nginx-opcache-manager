@@ -142,7 +142,7 @@ class Nginx_Opcache_Manager_Admin {
 		if ( file_exists( $style_file ) ) {
 			wp_enqueue_style(
 				'nom-react-admin',
-				NGINX_OPCACHE_MANAGER_PLUGIN_URL . 'build/style.css',
+				NGINX_OPCACHE_MANAGER_PLUGIN_URL . 'build/index.css',
 				array(),
 				NGINX_OPCACHE_MANAGER_VERSION
 			);
