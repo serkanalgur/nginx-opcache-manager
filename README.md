@@ -259,6 +259,10 @@ For issues and feature requests, please visit the plugin's support page.
 
 ## Changelog
 
+### Version 1.3.2
+- **Fixed** `__ is not defined` error - WordPress i18n script not loaded
+- **Improved** Admin enqueue now reads dependencies from webpack asset file
+
 ### Version 1.3.1
 - **Fixed** React admin panel not rendering on admin pages (empty page issue)
 - **Fixed** CSS 404 error - incorrect file reference in wp_enqueue_style

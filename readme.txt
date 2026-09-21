@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,11 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.3.2 - September 21, 2026 =
+
+* **Fixed** `__ is not defined` error - WordPress i18n script not loaded
+* **Improved** Admin enqueue now reads dependencies from webpack asset file
 
 = 1.3.1 - September 21, 2026 =
 
