@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 4.7
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,20 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.3.0 - September 21, 2026 =
+
+* **Added** REST API layer with full CRUD endpoints under `nom/v1` namespace
+* **Added** React-powered admin panel with modern UI components
+* **Added** Dashboard with real-time stats, Chart.js visualizations, and activity logs
+* **Added** Analytics page with historical performance charts
+* **Added** Settings page with modern form controls (toggles, selects, text inputs)
+* **Added** Build system via @wordpress/scripts for production-ready assets
+* **Added** Responsive design for mobile and desktop
+* **Changed** Admin panel now uses React instead of PHP templates
+* **Changed** Chart.js bundled with plugin instead of CDN
+* **Improved** Modern UI with card-based layout and smooth transitions
+* **Improved** Better error handling with user-friendly notices
 
 = 1.2.0 =
 

@@ -4,6 +4,44 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-09-21
+
+### Added
+- **REST API Layer**: Full REST API endpoints under `nom/v1` namespace
+  - `GET /stats` - Current Nginx and Opcache statistics
+  - `POST /nginx/clear` - Clear Nginx cache
+  - `POST /opcache/reset` - Reset PHP Opcache
+  - `GET /logs` - Activity logs
+  - `POST /logs/clear` - Clear activity logs
+  - `GET /analytics` - Analytics data with charts
+  - `GET/POST /settings` - Read and update plugin settings
+  - `GET /server-info` - Server information
+- **React Admin Panel**: Modern React-based admin interface
+  - Dashboard with real-time stats, Chart.js visualizations, and activity logs
+  - Analytics page with historical performance charts
+  - Settings page with modern form controls (toggles, selects, text inputs)
+  - Tab-based navigation between Dashboard, Analytics, and Settings
+  - Auto-refreshing activity logs (30-second interval)
+  - Responsive design for mobile and desktop
+- **Build System**: Webpack configuration via `@wordpress/scripts`
+  - Production-ready minified builds
+  - CSS and JS code splitting
+  - WordPress-compatible asset loading
+  - Build output included in repository for easy distribution
+
+### Changed
+- Admin panel now uses React instead of PHP templates
+- Settings page uses REST API instead of traditional WordPress Settings API form submission
+- Activity logs fetched via REST API with automatic refresh
+- Statistics loaded via REST API endpoints
+- Chart.js now bundled with the plugin instead of loaded from CDN
+
+### Improved
+- Modern UI with card-based layout, smooth transitions, and responsive grid
+- Type-safe JavaScript with modern React patterns
+- Better error handling with user-friendly notices
+- Cleaner separation between frontend and backend logic
+
 ## [1.2.0] - 2026-09-13
 
 ### Added
