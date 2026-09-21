@@ -15,6 +15,9 @@ const actionColors = {
 	reset: 'nom-badge-warning',
 	flush: 'nom-badge-info',
 	invalidate: 'nom-badge-info',
+	delete: 'nom-badge-danger',
+	deleted: 'nom-badge-danger',
+	schedule: 'nom-badge-warning',
 };
 
 /**
@@ -51,25 +54,27 @@ export default function ActivityLog( { logs = [], onClear, isClearing = false } 
 			<CardHeader className="nom-activity-log-header">
 				<h3>
 					<span className="dashicons dashicons-list-view"></span>
-					{ __( 'Activity Log', 'nginx-opcache-manager' ) }
+					{ 'Aktivite Gunlugu' }
 				</h3>
 				{ onClear && (
 					<Button
-						isDestructive
+						variant="secondary"
 						isSmall
 						onClick={ onClear }
 						disabled={ isClearing || logs.length === 0 }
 						isBusy={ isClearing }
+						icon="trash"
 					>
-						{ __( 'Clear Logs', 'nginx-opcache-manager' ) }
+						{ 'Temizle' }
 					</Button>
 				) }
 			</CardHeader>
 			<CardBody>
 				{ logs.length === 0 ? (
-					<p className="nom-empty-state">
-						{ __( 'No activity logs yet.', 'nginx-opcache-manager' ) }
-					</p>
+					<div className="nom-empty-state">
+						<span className="dashicons dashicons-info-outline"></span>
+						<p>{ 'Henuz aktivite kaydi yok.' }</p>
+					</div>
 				) : (
 					<div className="nom-log-list">
 						{ logs.map( ( log, index ) => (

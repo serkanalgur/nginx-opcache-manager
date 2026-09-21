@@ -289,19 +289,59 @@ class Nginx_Opcache_Manager_REST_API {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_analytics( $request ) {
-		$analytics = new Nginx_Opcache_Manager_Analytics();
+		try {
+			$analytics = new Nginx_Opcache_Manager_Analytics();
+			$stats = new Nginx_Opcache_Manager_Stats();
+			$raw = $stats->get_dashboard_data();
 
-		$stats = new Nginx_Opcache_Manager_Stats();
-		$chart_data = $stats->get_dashboard_data();
+			// Remap to frontend-expected keys
+			$chart_data = array(
+				'labels'     => isset( $raw['timestamps'] ) ? $raw['timestamps'] : array(),
+				'hits'       => isset( $raw['opcache_hits'] ) ? $raw['opcache_hits'] : array(),
+				'misses'     => isset( $raw['opcache_misses'] ) ? $raw['opcache_misses'] : array(),
+				'memory'     => isset( $raw['opcache_memory'] ) ? $raw['opcache_memory'] : array(),
+				'cache_size' => isset( $raw['nginx_sizes'] ) ? $raw['nginx_sizes'] : array(),
+				'files'      => isset( $raw['nginx_files'] ) ? $raw['nginx_files'] : array(),
+			);
 
-		return new WP_REST_Response(
-			array(
-				'charts'  => $chart_data,
-				'summary' => $analytics->get_summary(),
-				'metrics' => $analytics->get_performance_metrics(),
-			),
-			200
-		);
+			$summary = $analytics->get_summary();
+			$metrics = $analytics->get_performance_metrics();
+
+			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				error_log( 'NOM Analytics: chart_data keys = ' . implode( ', ', array_keys( $chart_data ) ) );
+				error_log( 'NOM Analytics: summary = ' . print_r( $summary, true ) );
+				error_log( 'NOM Analytics: metrics = ' . print_r( $metrics, true ) );
+			}
+
+			return new WP_REST_Response(
+				array(
+					'charts'  => $chart_data,
+					'summary' => $summary,
+					'metrics' => $metrics,
+				),
+				200
+			);
+		} catch ( \Exception $e ) {
+			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				error_log( 'NOM Analytics Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() );
+			}
+			return new WP_REST_Response(
+				array(
+					'error'   => $e->getMessage(),
+					'charts'  => array(
+						'labels'     => array(),
+						'hits'       => array(),
+						'misses'     => array(),
+						'memory'     => array(),
+						'cache_size' => array(),
+						'files'      => array(),
+					),
+					'summary' => array(),
+					'metrics' => array(),
+				),
+				200
+			);
+		}
 	}
 
 	/**

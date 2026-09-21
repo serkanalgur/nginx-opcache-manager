@@ -15,7 +15,7 @@ export default function LoadingSpinner() {
 	return (
 		<div className="nom-loading">
 			<Spinner />
-			<p>{ __( 'Loading...', 'nginx-opcache-manager' ) }</p>
+			<p>Yukleniyor...</p>
 		</div>
 	);
 }

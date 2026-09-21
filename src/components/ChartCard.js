@@ -44,22 +44,34 @@ const defaultOptions = {
 		legend: {
 			display: true,
 			position: 'top',
+			labels: {
+				usePointStyle: true,
+				pointStyle: 'circle',
+				padding: 16,
+				font: { size: 12, weight: '500' },
+			},
 		},
 		tooltip: {
 			mode: 'index',
 			intersect: false,
+			backgroundColor: '#1d2327',
+			titleFont: { size: 13 },
+			bodyFont: { size: 12 },
+			padding: 12,
+			cornerRadius: 8,
 		},
 	},
 	scales: {
 		x: {
 			display: true,
-			grid: {
-				display: false,
-			},
+			grid: { display: false },
+			ticks: { font: { size: 11 }, color: '#8c8f94' },
 		},
 		y: {
 			display: true,
 			beginAtZero: true,
+			grid: { color: '#f0f0f1' },
+			ticks: { font: { size: 11 }, color: '#8c8f94' },
 		},
 	},
 };
@@ -73,6 +85,7 @@ const defaultOptions = {
  * @param {string} props.type      - Chart type (line, bar, doughnut).
  * @param {Object} props.options   - Chart.js options override.
  * @param {number} props.height    - Chart height in pixels.
+ * @param {string} props.icon      - Dashicons class.
  * @return {JSX.Element} Chart card component.
  */
 export default function ChartCard( {
@@ -80,7 +93,8 @@ export default function ChartCard( {
 	data,
 	type = 'line',
 	options = {},
-	height = 300,
+	height = 280,
+	icon,
 } ) {
 	const mergedOptions = {
 		...defaultOptions,
@@ -107,11 +121,16 @@ export default function ChartCard( {
 	return (
 		<Card className="nom-chart-card">
 			{ title && (
-				<CardHeader>
-					<h3>{ title }</h3>
+				<CardHeader className="nom-chart-card__header">
+					<div className="nom-chart-card__title-wrap">
+						{ icon && (
+							<span className={ `dashicons nom-chart-card__icon ${ icon }` }></span>
+						) }
+						<h3 className="nom-chart-card__title">{ title }</h3>
+					</div>
 				</CardHeader>
 			) }
-			<CardBody>
+			<CardBody className="nom-chart-card__body">
 				<div
 					className="nom-chart-container"
 					style={ { height: `${ height }px` } }

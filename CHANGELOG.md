@@ -4,6 +4,28 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-09-21
+
+### Fixed
+- **WordPress i18n Not Defined**: Completely removed `@wordpress/i18n` dependency
+  - Replaced all `__()` translation calls with plain strings
+  - Removed `wp-i18n` from bundled script dependencies
+  - Eliminates `__ is not defined` ReferenceError at runtime
+- **Analytics 500 Error**: Fixed REST API analytics endpoint returning 500
+  - Remapped chart data keys to match frontend expectations (labels, hits, misses, memory, cache_size, files)
+  - Added try/catch fallback for graceful error handling
+
+### Changed
+- **Modern UI Redesign**: Completely revamped admin panel design
+  - Dashboard now shows 2 consolidated stat cards (Fastcgi/Nginx Cache + PHP Opcache) instead of 4
+  - Each stat card displays dual metrics (primary + secondary)
+  - Added dashicons to all stat cards and chart cards
+  - Modern card design with gradients, shadows, and hover effects
+  - Updated color scheme with CSS custom properties
+  - Improved tab navigation with active state backgrounds
+  - Better responsive breakpoints for mobile/tablet
+  - Activity log redesigned with method badges and empty state icons
+
 ## [1.3.2] - 2026-09-21
 
 ### Fixed

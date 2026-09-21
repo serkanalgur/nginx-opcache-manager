@@ -4,7 +4,6 @@
  * @package Nginx_Opcache_Manager
  */
 
-import { __ } from '@wordpress/i18n';
 import { useState, useEffect, createRoot } from '@wordpress/element';
 import {
 	TabPanel,
@@ -75,7 +74,7 @@ function DashboardPage() {
 	};
 
 	const handleClearCache = async () => {
-		if (!confirm(__('Are you sure you want to clear the Nginx cache?', 'nginx-opcache-manager'))) {
+		if (!confirm('Are you sure you want to clear the Nginx cache?')) {
 			return;
 		}
 		try {
@@ -92,7 +91,7 @@ function DashboardPage() {
 	};
 
 	const handleResetOpcache = async () => {
-		if (!confirm(__('Are you sure you want to reset Opcache?', 'nginx-opcache-manager'))) {
+		if (!confirm('Are you sure you want to reset Opcache?')) {
 			return;
 		}
 		try {
@@ -117,8 +116,8 @@ function DashboardPage() {
 	return (
 		<div className="nom-dashboard">
 			<div className="nom-header">
-				<h1>{__('Cache Manager Dashboard', 'nginx-opcache-manager')}</h1>
-				<p className="nom-subtitle">{__('Monitor and manage your Nginx cache and PHP Opcache', 'nginx-opcache-manager')}</p>
+				<h1>{'Cache Manager Dashboard'}</h1>
+				<p className="nom-subtitle">{'Monitor and manage your Nginx cache and PHP Opcache'}</p>
 			</div>
 
 			{notice && (
@@ -138,7 +137,7 @@ function DashboardPage() {
 						disabled={clearing}
 						icon="trash"
 					>
-						{__('Clear Nginx Cache', 'nginx-opcache-manager')}
+						{'Clear Nginx Cache'}
 					</Button>
 				</FlexItem>
 				<FlexItem>
@@ -149,45 +148,44 @@ function DashboardPage() {
 						disabled={resetting}
 						icon="update"
 					>
-						{__('Reset Opcache', 'nginx-opcache-manager')}
+						{'Reset Opcache'}
 					</Button>
 				</FlexItem>
 			</Flex>
 
 			<div className="nom-stat-cards">
 				<StatCard
-					title={__('Nginx Cache', 'nginx-opcache-manager')}
-					value={formatBytes(nginx.cache_size || 0)}
-					subtitle={__('Cache Size', 'nginx-opcache-manager')}
+					title={'Fastcgi / Nginx Cache'}
 					icon="database"
 					color="#2196F3"
+					primary={ {
+						value: formatBytes( nginx.cache_size || 0 ),
+						label: 'Cache Boyutu',
+					} }
+					secondary={ {
+						value: formatNumber( nginx.cached_files || 0 ),
+						label: 'Dosya Sayisi',
+					} }
 				/>
 				<StatCard
-					title={__('Cached Files', 'nginx-opcache-manager')}
-					value={formatNumber(nginx.cached_files || 0)}
-					subtitle={__('Files', 'nginx-opcache-manager')}
-					icon="media-default"
-					color="#4CAF50"
-				/>
-				<StatCard
-					title={__('Hit Rate', 'nginx-opcache-manager')}
-					value={`${(opcache.hit_rate || 0).toFixed(1)}%`}
-					subtitle={__('Opcache', 'nginx-opcache-manager')}
-					icon="chart-bar"
-					color="#FF9800"
-				/>
-				<StatCard
-					title={__('Memory Usage', 'nginx-opcache-manager')}
-					value={`${(opcache.memory_usage || 0).toFixed(1)}%`}
-					subtitle={__('Used', 'nginx-opcache-manager')}
-					icon="memory"
+					title={'PHP Opcache'}
+					icon="performance"
 					color="#9C27B0"
+					primary={ {
+						value: `${ ( opcache.hit_rate || 0 ).toFixed( 1 ) }%`,
+						label: 'Hit Rate',
+					} }
+					secondary={ {
+						value: `${ ( opcache.memory_usage || 0 ).toFixed( 1 ) }%`,
+						label: 'Bellek Kullanimi',
+					} }
 				/>
 			</div>
 
 			<div className="nom-charts-grid">
 				<ChartCard
-					title={__('Hit Rate', 'nginx-opcache-manager')}
+					title={'Hit Rate'}
+					icon="chart-bar"
 					type="doughnut"
 					data={{
 						labels: ['Hits', 'Misses'],
@@ -205,7 +203,8 @@ function DashboardPage() {
 					}}
 				/>
 				<ChartCard
-					title={__('Memory Usage', 'nginx-opcache-manager')}
+					title={'Memory Usage'}
+					icon="performance"
 					type="doughnut"
 					data={{
 						labels: ['Used', 'Free'],
@@ -262,8 +261,8 @@ function AnalyticsPage() {
 	return (
 		<div className="nom-analytics">
 			<div className="nom-header">
-				<h1>{__('Analytics', 'nginx-opcache-manager')}</h1>
-				<p className="nom-subtitle">{__('Performance metrics and historical data', 'nginx-opcache-manager')}</p>
+				<h1>{'Analytics'}</h1>
+				<p className="nom-subtitle">{'Performance metrics and historical data'}</p>
 			</div>
 
 			{notice && (
@@ -276,13 +275,13 @@ function AnalyticsPage() {
 
 			<div className="nom-charts-grid">
 				<ChartCard
-					title={__('Cache Hits vs Misses', 'nginx-opcache-manager')}
+					title={'Cache Hits vs Misses'}
 					type="line"
 					data={{
 						labels: charts.labels || [],
 						datasets: [
 							{
-								label: __('Hits', 'nginx-opcache-manager'),
+								label: 'Hits',
 								data: charts.hits || [],
 								borderColor: '#4CAF50',
 								backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -290,7 +289,7 @@ function AnalyticsPage() {
 								tension: 0.4,
 							},
 							{
-								label: __('Misses', 'nginx-opcache-manager'),
+								label: 'Misses',
 								data: charts.misses || [],
 								borderColor: '#FF5722',
 								backgroundColor: 'rgba(255, 87, 34, 0.1)',
@@ -308,12 +307,12 @@ function AnalyticsPage() {
 					}}
 				/>
 				<ChartCard
-					title={__('Memory Usage Trend', 'nginx-opcache-manager')}
+					title={'Memory Usage Trend'}
 					type="line"
 					data={{
 						labels: charts.labels || [],
 						datasets: [{
-							label: __('Memory Usage %', 'nginx-opcache-manager'),
+							label: 'Memory Usage %',
 							data: charts.memory || [],
 							borderColor: '#9C27B0',
 							backgroundColor: 'rgba(156, 39, 176, 0.1)',
@@ -333,12 +332,12 @@ function AnalyticsPage() {
 					}}
 				/>
 				<ChartCard
-					title={__('Nginx Cache Size', 'nginx-opcache-manager')}
+					title={'Nginx Cache Size'}
 					type="bar"
 					data={{
 						labels: charts.labels || [],
 						datasets: [{
-							label: __('Size (MB)', 'nginx-opcache-manager'),
+							label: 'Size (MB)',
 							data: charts.cache_size || [],
 							backgroundColor: '#2196F3',
 							borderRadius: 4,
@@ -353,12 +352,12 @@ function AnalyticsPage() {
 					}}
 				/>
 				<ChartCard
-					title={__('Cached Files', 'nginx-opcache-manager')}
+					title={'Cached Files'}
 					type="line"
 					data={{
 						labels: charts.labels || [],
 						datasets: [{
-							label: __('Files', 'nginx-opcache-manager'),
+							label: 'Files',
 							data: charts.files || [],
 							borderColor: '#FF9800',
 							backgroundColor: 'rgba(255, 152, 0, 0.1)',
@@ -432,8 +431,8 @@ function SettingsPage() {
 	return (
 		<div className="nom-settings">
 			<div className="nom-header">
-				<h1>{__('Settings', 'nginx-opcache-manager')}</h1>
-				<p className="nom-subtitle">{__('Configure Nginx Opcache Manager', 'nginx-opcache-manager')}</p>
+				<h1>{'Settings'}</h1>
+				<p className="nom-subtitle">{'Configure Nginx Opcache Manager'}</p>
 			</div>
 
 			{notice && (
@@ -446,19 +445,19 @@ function SettingsPage() {
 
 			<Card>
 				<CardHeader>
-					<h2>{__('Nginx Cache Settings', 'nginx-opcache-manager')}</h2>
+					<h2>{'Nginx Cache Settings'}</h2>
 				</CardHeader>
 				<CardBody>
 					<PanelRow>
 						<ToggleControl
-							label={__('Enable Nginx Cache Monitoring', 'nginx-opcache-manager')}
+							label={'Enable Nginx Cache Monitoring'}
 							checked={formData.nginx_cache_enabled || false}
 							onChange={(val) => updateField('nginx_cache_enabled', val)}
 						/>
 					</PanelRow>
 					<PanelRow>
 						<TextControl
-							label={__('Nginx Cache Path', 'nginx-opcache-manager')}
+							label={'Nginx Cache Path'}
 							value={formData.nginx_cache_path || ''}
 							onChange={(val) => updateField('nginx_cache_path', val)}
 							placeholder="/var/run/nginx-cache"
@@ -466,7 +465,7 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<TextControl
-							label={__('Fastcgi Cache Key Schema', 'nginx-opcache-manager')}
+							label={'Fastcgi Cache Key Schema'}
 							value={formData.fastcgi_cache_key_schema || ''}
 							onChange={(val) => updateField('fastcgi_cache_key_schema', val)}
 							placeholder="$scheme$request_method$host$request_uri"
@@ -474,21 +473,21 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
-							label={__('Auto-Flush Cache on Content Changes', 'nginx-opcache-manager')}
+							label={'Auto-Flush Cache on Content Changes'}
 							checked={formData.enable_post_cache_flush || false}
 							onChange={(val) => updateField('enable_post_cache_flush', val)}
 						/>
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
-							label={__('Auto-Flush Product Cache (WooCommerce)', 'nginx-opcache-manager')}
+							label={'Auto-Flush Product Cache (WooCommerce)'}
 							checked={formData.enable_woocommerce_flush || false}
 							onChange={(val) => updateField('enable_woocommerce_flush', val)}
 						/>
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
-							label={__('Enable Notifications', 'nginx-opcache-manager')}
+							label={'Enable Notifications'}
 							checked={formData.enable_notifications || false}
 							onChange={(val) => updateField('enable_notifications', val)}
 						/>
@@ -498,12 +497,12 @@ function SettingsPage() {
 
 			<Card>
 				<CardHeader>
-					<h2>{__('Scheduled Cache Purge', 'nginx-opcache-manager')}</h2>
+					<h2>{'Scheduled Cache Purge'}</h2>
 				</CardHeader>
 				<CardBody>
 					<PanelRow>
 						<ToggleControl
-							label={__('Enable Scheduled Purge', 'nginx-opcache-manager')}
+							label={'Enable Scheduled Purge'}
 							checked={formData.schedule_enabled || false}
 							onChange={(val) => updateField('schedule_enabled', val)}
 						/>
@@ -512,7 +511,7 @@ function SettingsPage() {
 						<>
 							<PanelRow>
 								<SelectControl
-									label={__('Purge Interval', 'nginx-opcache-manager')}
+									label={'Purge Interval'}
 									value={formData.schedule_interval || 'six_hours'}
 									options={Object.entries(intervals).map(([slug, data]) => ({
 										label: data.label,
@@ -523,7 +522,7 @@ function SettingsPage() {
 							</PanelRow>
 							<PanelRow>
 								<SelectControl
-									label={__('Purge Targets', 'nginx-opcache-manager')}
+									label={'Purge Targets'}
 									value={formData.schedule_targets || 'both'}
 									options={Object.entries(targets).map(([slug, label]) => ({
 										label,
@@ -545,7 +544,7 @@ function SettingsPage() {
 						isBusy={saving}
 						disabled={saving}
 					>
-						{__('Save Settings', 'nginx-opcache-manager')}
+						{'Save Settings'}
 					</Button>
 				</FlexItem>
 			</Flex>
@@ -568,17 +567,17 @@ function App() {
 				tabs={[
 					{
 						name: 'dashboard',
-						title: __('Dashboard', 'nginx-opcache-manager'),
+						title: 'Dashboard',
 						className: 'nom-tab-dashboard',
 					},
 					{
 						name: 'analytics',
-						title: __('Analytics', 'nginx-opcache-manager'),
+						title: 'Analytics',
 						className: 'nom-tab-analytics',
 					},
 					{
 						name: 'settings',
-						title: __('Settings', 'nginx-opcache-manager'),
+						title: 'Settings',
 						className: 'nom-tab-settings',
 					},
 				]}

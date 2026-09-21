@@ -1,6 +1,6 @@
 {
     "name": "nginx-opcache-manager",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "WordPress plugin to manage and monitor Nginx cache and PHP Opcache with analytics",
     "author": "Serkan Algur",
     "license": "GPL-2.0-or-later",

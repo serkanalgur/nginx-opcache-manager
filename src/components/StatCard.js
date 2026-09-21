@@ -7,33 +7,49 @@
 import { Card, CardBody } from '@wordpress/components';
 
 /**
- * Displays a single statistic in a card format.
+ * Displays a single or dual metric in a card format.
  *
- * @param {Object} props           - Component props.
- * @param {string} props.title     - Card title.
- * @param {string|number} props.value - Statistic value.
- * @param {string} props.subtitle  - Subtitle text.
- * @param {string} props.icon      - Dashicons class name.
- * @param {string} props.status    - Status color class.
+ * @param {Object}   props             - Component props.
+ * @param {string}   props.title       - Card title.
+ * @param {string}   props.icon        - Dashicons class name.
+ * @param {string}   props.color       - Accent color.
+ * @param {Object}   props.primary     - Primary metric: { value, label }.
+ * @param {Object}   props.secondary   - Secondary metric: { value, label }.
  * @return {JSX.Element} Stat card component.
  */
-export default function StatCard( { title, value, subtitle, icon, status = '' } ) {
+export default function StatCard( { title, icon, color = '#2271b1', primary, secondary } ) {
 	return (
-		<Card className={ `nom-stat-card ${ status }` }>
+		<Card className="nom-stat-card">
 			<CardBody>
-				<div className="nom-stat-card-inner">
-					{ icon && (
-						<div className="nom-stat-icon">
-							<span className={ `dashicons ${ icon }` }></span>
+				<div className="nom-stat-card__top">
+					<div
+						className="nom-stat-card__icon"
+						style={ { background: 'linear-gradient(135deg, ' + color + ', ' + color + 'dd)' } }
+					>
+						{ icon && <span className={ `dashicons ${ icon }` }></span> }
+					</div>
+					<div className="nom-stat-card__title-wrap">
+						<span className="nom-stat-card__label">{ title }</span>
+					</div>
+				</div>
+
+				<div className="nom-stat-card__metrics">
+					{ primary && (
+						<div className="nom-stat-card__metric">
+							<span className="nom-stat-card__value" style={ { color } }>
+								{ primary.value }
+							</span>
+							<span className="nom-stat-card__metric-label">{ primary.label }</span>
 						</div>
 					) }
-					<div className="nom-stat-content">
-						<h3 className="nom-stat-value">{ value }</h3>
-						<p className="nom-stat-title">{ title }</p>
-						{ subtitle && (
-							<p className="nom-stat-subtitle">{ subtitle }</p>
-						) }
-					</div>
+					{ secondary && (
+						<div className="nom-stat-card__metric">
+							<span className="nom-stat-card__value nom-stat-card__value--sm">
+								{ secondary.value }
+							</span>
+							<span className="nom-stat-card__metric-label">{ secondary.label }</span>
+						</div>
+					) }
 				</div>
 			</CardBody>
 		</Card>
