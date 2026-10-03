@@ -79,13 +79,13 @@ const defaultOptions = {
 /**
  * Chart card component.
  *
- * @param {Object} props           - Component props.
- * @param {string} props.title     - Card title.
- * @param {Object} props.data      - Chart.js data object.
- * @param {string} props.type      - Chart type (line, bar, doughnut).
- * @param {Object} props.options   - Chart.js options override.
- * @param {number} props.height    - Chart height in pixels.
- * @param {string} props.icon      - Dashicons class.
+ * @param {Object} props         - Component props.
+ * @param {string} props.title   - Card title.
+ * @param {Object} props.data    - Chart.js data object.
+ * @param {string} props.type    - Chart type (line, bar, doughnut).
+ * @param {Object} props.options - Chart.js options override.
+ * @param {number} props.height  - Chart height in pixels.
+ * @param {string} props.icon    - Dashicons class.
  * @return {JSX.Element} Chart card component.
  */
 export default function ChartCard( {
@@ -124,7 +124,9 @@ export default function ChartCard( {
 				<CardHeader className="nom-chart-card__header">
 					<div className="nom-chart-card__title-wrap">
 						{ icon && (
-							<span className={ `dashicons nom-chart-card__icon ${ icon }` }></span>
+							<span
+								className={ `dashicons nom-chart-card__icon ${ icon }` }
+							></span>
 						) }
 						<h3 className="nom-chart-card__title">{ title }</h3>
 					</div>

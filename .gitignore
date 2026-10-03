@@ -47,3 +47,9 @@ languages/*.mo
 # NPM
 npm-debug.log
 yarn-error.log
+.temp_files/
+
+.wrongstack/
+!/.wrongstack/
+/.wrongstack/*
+!/.wrongstack/project.json

@@ -307,12 +307,6 @@ class Nginx_Opcache_Manager_REST_API {
 			$summary = $analytics->get_summary();
 			$metrics = $analytics->get_performance_metrics();
 
-			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-				error_log( 'NOM Analytics: chart_data keys = ' . implode( ', ', array_keys( $chart_data ) ) );
-				error_log( 'NOM Analytics: summary = ' . print_r( $summary, true ) );
-				error_log( 'NOM Analytics: metrics = ' . print_r( $metrics, true ) );
-			}
-
 			return new WP_REST_Response(
 				array(
 					'charts'  => $chart_data,
@@ -400,6 +394,16 @@ class Nginx_Opcache_Manager_REST_API {
 	 */
 	public function update_settings( $request ) {
 		$params = $request->get_json_params();
+
+		// A non-JSON body (or an empty one) makes get_json_params() return null,
+		// which cannot be iterated. Fall back to the parsed body params.
+		if ( ! is_array( $params ) ) {
+			$params = $request->get_body_params();
+		}
+
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
 
 		$sanitizers = array(
 			'nginx_cache_enabled'       => 'rest_sanitize_boolean',

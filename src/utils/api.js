@@ -4,9 +4,64 @@
  * @package Nginx_Opcache_Manager
  */
 
-import apiFetch from '@wordpress/api-fetch';
+import apiFetch, { createNonceMiddleware } from '@wordpress/api-fetch';
 
 const API_NAMESPACE = 'nom/v1';
+
+/**
+ * Resolve the REST nonce that admin/class-admin.php localizes as `nomData.nonce`,
+ * falling back to the core `wpApiSettings.nonce` used by other WP admin screens.
+ *
+ * Without this header WordPress rejects cookie-authenticated REST calls with
+ * `rest_cookie_invalid_nonce` (403), because it cannot prove the request comes
+ * from a logged-in admin session.
+ *
+ * @return {string|undefined} REST nonce.
+ */
+function getRestNonce() {
+	if ( typeof window === 'undefined' ) {
+		return undefined;
+	}
+
+	if ( window.nomData && window.nomData.nonce ) {
+		return window.nomData.nonce;
+	}
+
+	if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+		return window.wpApiSettings.nonce;
+	}
+
+	return undefined;
+}
+
+const restNonce = getRestNonce();
+
+if ( restNonce ) {
+	apiFetch.use( createNonceMiddleware( restNonce ) );
+}
+
+/**
+ * Turn an apiFetch failure into an error carrying the server's real reason.
+ *
+ * apiFetch only reports "The server responded with a status of 403 (Forbidden)";
+ * the actionable WP REST error (`code`/`message`) lives on `error.data`.
+ *
+ * @param {Object} error Raw apiFetch error.
+ * @return {Error} Error with `code` and `status` properties.
+ */
+function toApiError( error ) {
+	const data = error && error.data;
+	const apiError = new Error(
+		( data && data.message ) ||
+			( error && error.message ) ||
+			'Unknown error'
+	);
+
+	apiError.code = ( data && data.code ) || 'unknown';
+	apiError.status = ( error && error.status ) || 0;
+
+	return apiError;
+}
 
 /**
  * Generic API request helper.
@@ -24,7 +79,11 @@ export async function apiRequest( endpoint, options = {} ) {
 		...options,
 	};
 
-	return apiFetch( defaultOptions );
+	try {
+		return await apiFetch( defaultOptions );
+	} catch ( error ) {
+		throw toApiError( error );
+	}
 }
 
 /**

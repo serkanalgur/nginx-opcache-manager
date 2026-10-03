@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Nginx Opcache Manager
  * Description: Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics
- * Version: 1.3.3
+ * Version: 1.3.4
  * Author: Serkan Algur
  * Author URI: https://github.com/serkanalgur
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants
  */
-define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.3.3' );
+define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.3.4' );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_FILE', __FILE__ );
@@ -103,12 +103,6 @@ class Nginx_Opcache_Manager {
 		if ( is_admin() ) {
 			add_action( 'plugins_loaded', array( $this, 'init_admin' ) );
 		}
-
-		// Register AJAX handlers (legacy fallback)
-		add_action( 'wp_ajax_nom_get_stats', array( $this, 'ajax_get_stats' ) );
-		add_action( 'wp_ajax_nom_clear_cache', array( $this, 'ajax_clear_cache' ) );
-		add_action( 'wp_ajax_nom_reset_opcache', array( $this, 'ajax_reset_opcache' ) );
-		add_action( 'wp_ajax_nom_get_flush_logs', array( $this, 'ajax_get_flush_logs' ) );
 	}
 
 	/**
@@ -166,87 +160,6 @@ class Nginx_Opcache_Manager {
 		if ( current_user_can( 'manage_options' ) ) {
 			$admin = new Nginx_Opcache_Manager_Admin();
 			$analytics = new Nginx_Opcache_Manager_Analytics();
-		}
-	}
-
-	/**
-	 * AJAX handler for getting statistics
-	 */
-	public function ajax_get_stats() {
-		$this->check_nonce( 'nom_nonce' );
-
-		$stats = new Nginx_Opcache_Manager_Stats();
-		$nginx_stats = $stats->get_nginx_stats();
-		$opcache_stats = $stats->get_opcache_stats();
-
-		wp_send_json_success( array(
-			'nginx' => $nginx_stats,
-			'opcache' => $opcache_stats,
-		) );
-	}
-
-	/**
-	 * AJAX handler for clearing nginx cache
-	 */
-	public function ajax_clear_cache() {
-		$this->check_nonce( 'nom_nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
-
-		$nginx_manager = new Nginx_Opcache_Manager_Cache();
-		$result = $nginx_manager->clear_cache();
-
-		if ( $result ) {
-			wp_send_json_success( 'Nginx cache cleared successfully' );
-		} else {
-			wp_send_json_error( 'Failed to clear nginx cache' );
-		}
-	}
-
-	/**
-	 * AJAX handler for resetting opcache
-	 */
-	public function ajax_reset_opcache() {
-		$this->check_nonce( 'nom_nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
-
-		$opcache_manager = new Nginx_Opcache_Manager_Opcache();
-		$result = $opcache_manager->reset_opcache();
-
-		if ( $result ) {
-			wp_send_json_success( 'Opcache reset successfully' );
-		} else {
-			wp_send_json_error( 'Failed to reset opcache' );
-		}
-	}
-
-	/**
-	 * AJAX handler for getting flush logs
-	 */
-	public function ajax_get_flush_logs() {
-		$this->check_nonce( 'nom_nonce' );
-
-		$logs = Nginx_Opcache_Manager_Post_Cache_Tracker::get_flush_logs();
-		$stats = Nginx_Opcache_Manager_Post_Cache_Tracker::get_cache_stats_by_type();
-
-		wp_send_json_success( array(
-			'logs'  => array_reverse( $logs ),
-			'stats' => $stats,
-		) );
-	}
-
-	/**
-	 * Check AJAX nonce
-	 */
-	private function check_nonce( $nonce_name ) {
-		if ( ! isset( $_REQUEST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ), $nonce_name ) ) {
-			wp_send_json_error( 'Security check failed' );
-			exit;
 		}
 	}
 }

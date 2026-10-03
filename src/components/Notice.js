@@ -9,11 +9,11 @@ import { Notice } from '@wordpress/components';
 /**
  * Admin notice wrapper component.
  *
- * @param {Object}  props           - Component props.
- * @param {string}  props.status    - Notice status (success, error, warning, info).
- * @param {string}  props.message   - Notice message.
- * @param {boolean} props.isDismissible - Whether the notice is dismissible.
- * @param {Function} props.onDismiss   - Dismiss handler.
+ * @param {Object}   props               - Component props.
+ * @param {string}   props.status        - Notice status (success, error, warning, info).
+ * @param {string}   props.message       - Notice message.
+ * @param {boolean}  props.isDismissible - Whether the notice is dismissible.
+ * @param {Function} props.onDismiss     - Dismiss handler.
  * @return {JSX.Element} Notice component.
  */
 export default function AdminNotice( {
