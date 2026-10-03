@@ -164,6 +164,8 @@ class Nginx_Opcache_Manager_Admin {
 			wp_die( esc_html__( 'Unauthorized', 'nginx-opcache-manager' ) );
 		}
 
+		$nom_tab = 'dashboard';
+
 		include NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'admin/views/react-dashboard.php';
 	}
 
@@ -175,6 +177,8 @@ class Nginx_Opcache_Manager_Admin {
 			wp_die( esc_html__( 'Unauthorized', 'nginx-opcache-manager' ) );
 		}
 
+		$nom_tab = 'analytics';
+
 		include NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'admin/views/react-dashboard.php';
 	}
 
@@ -185,6 +189,8 @@ class Nginx_Opcache_Manager_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Unauthorized', 'nginx-opcache-manager' ) );
 		}
+
+		$nom_tab = 'settings';
 
 		include NGINX_OPCACHE_MANAGER_PLUGIN_DIR . 'admin/views/react-dashboard.php';
 	}

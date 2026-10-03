@@ -247,11 +247,6 @@ class Nginx_Opcache_Manager_Cache {
 			error_log( $log_entry );
 		}
 
-		// Debug: Log what we're inserting
-		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-			error_log( 'NOM: Inserting cache activity - action="' . $action . '" (type: ' . gettype($action) . ')' );
-		}
-
 		// Insert into database table
 		$wpdb->insert(
 			$table_name,
@@ -295,14 +290,6 @@ class Nginx_Opcache_Manager_Cache {
 
 		if ( ! $activities ) {
 			return array();
-		}
-
-		// Debug: Log what we retrieved
-		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-			error_log( 'NOM: Retrieved ' . count( $activities ) . ' activities from database' );
-			foreach ( $activities as $activity ) {
-				error_log( 'NOM: Activity - action="' . $activity->action . '" (type: ' . gettype($activity->action) . ')' );
-			}
 		}
 
 		// Convert stdClass to array

@@ -24,7 +24,7 @@ A powerful WordPress plugin to monitor and manage Nginx cache and PHP Opcache di
 
 ## Requirements
 
-- WordPress 4.7 or higher
+- WordPress 6.2 or higher
 - PHP 7.2 or higher
 - Nginx web server (for cache management features)
 - PHP Opcache extension (for opcache features)

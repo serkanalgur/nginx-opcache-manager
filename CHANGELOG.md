@@ -4,27 +4,38 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.3.4] - 2026-10-03
+## [1.3.5] - 2026-10-03
 
 ### Fixed
-- **REST API 403 on every request (critical)**: The React admin panel never sent an `X-WP-Nonce` header. WordPress rejected all `nom/v1` calls — including reads — with `rest_cookie_invalid_nonce`, so the dashboard could not load at all.
+- **Admin buttons did nothing (critical)**: `confirmAction()` returned `false` with no prompt, no notice and no console output whenever `wp.confirm` was unavailable, so **both** destructive actions — Clear Nginx Cache and Reset Opcache — aborted silently and looked like dead buttons. It now falls back to the native `window.confirm()` and logs a `console.warn` so the degradation is observable.
+- **Activity log "Clear" button re-fetched instead of clearing**: `onClear` was bound to `loadLogs`, so the button reloaded the list and left it untouched. The exported `clearLogs()` and `POST nom/v1/logs/clear` route were never called. The handler now clears, reloads, reports success/failure through the existing notice path, and drives a busy state so the button cannot be double-fired.
+- **Errors rendered as blue info banners**: `src/components/Notice.js` read a `status` prop that no call site supplied (all pass `type`), so `status` always fell back to `'info'`. Every failure looked like an informational message — this is why a failing action appeared to do nothing. The prop is now `type`, matching every call site.
+- **Activity-log poll could overwrite a success notice**: `loadLogs` only preserved an existing notice when it was already an error, so a 30s poll failure could replace the success notice an action handler had just set. Suppression is now conditional rather than keyed on "some notice exists": an identical failure is not re-announced, and a success notice wins only while it is still the fresh outcome of an action (within one poll window). Past that window a live failure takes over, so a permanently broken endpoint can no longer hide behind a stale success banner.
+- **Settings and Analytics opened the Dashboard**: all three admin screens include the same `react-dashboard.php`, and `<TabPanel>` was rendered with no `initialTab`. Settings showed no "Save Settings" button at all and Analytics showed dashboard charts. Each screen now passes its tab to React via a `data-tab` attribute on the root element, with an allow-list and a `dashboard` fallback.
+- **Build required `react-jsx-runtime` (WordPress 6.6+) while the plugin claimed support back to 4.7**: `@wordpress/babel-preset-default` hardcodes the automatic JSX runtime, which added the `react-jsx-runtime` script handle to `build/index.asset.php`. WordPress only registers that handle from 6.6, so on older installs the handle was dropped, `window.ReactJSXRuntime` was undefined and the panel rendered completely blank. A new `babel.config.js` switches to the classic runtime (needs only the long-standing `react` handle) and `webpack.config.js` stops externalizing the subpath so it is bundled instead.
+  - `package.json` **was** changed by this fix: `react` and `react-dom` are added as devDependencies (they are needed as explicit imports now that JSX compiles to `React.createElement`, and the Jest tests render components). A `browserslist` block extending `@wordpress/browserslist-config` was also added, so `preset-env` no longer falls back to that package's defaults implicitly.
+  - Bundling `react/jsx-runtime` pins React at 18: `react-chartjs-2@5.x` is itself pre-compiled against the automatic runtime, and React 19 removed `ReactCurrentOwner`, which React 18's `jsx-runtime` dereferences. `webpack.config.js` documents this coupling in full.
+- **REST API 403 on every request**: the React admin panel never sent an `X-WP-Nonce` header, so WordPress rejected all `nom/v1` calls — including reads — with `rest_cookie_invalid_nonce`.
   - `src/utils/api.js` now registers `createNonceMiddleware` with the nonce localized as `nomData.nonce` (falling back to `wpApiSettings.nonce`)
   - Failures now surface the server's real `code`/`message` instead of apiFetch's generic "status of 403"
 - **`npm run lint:js` crashed**: `typescript` floated to v7 via loose peer ranges, breaking `ts-api-utils`/`@typescript-eslint`. Pinned to `~5.2.2` via devDependency + `overrides`.
 - **`update_settings()` iterated `null`**: `get_json_params()` returns `null` for a non-JSON body; now falls back to `get_body_params()`.
-- **`loadLogs` error handling**: a failed activity-log fetch was only logged to the console and, once surfaced, re-fired every 30s from the poll timer, overwriting success notices.
-- **Confirmation dialog could abort silently**: `wp.confirm` was assumed present. `admin/class-admin.php` now declares `wp-util` as a script dependency.
 
 ### Added
 - React smoke test (`src/__tests__/app.test.js`) mounting the admin against a mocked API, covering the nonce registration, request paths, and REST error unwrapping.
 - `.eslintrc.js` and `.eslintignore`; `src/` is now lint-clean (0 errors).
+- `admin/class-admin.php` declares `wp-util` as a script dependency of the React admin screen, so the `wp.confirm()` dialog is actually loaded. `confirmAction()` had been assuming it was present; the dependency it was written against had never been declared.
+- Confirmation prompt on the activity-log "Clear" button. It is an irreversible delete of the audit trail and was the one destructive action with no prompt.
 
 ### Changed
 - **Removed the dead legacy AJAX surface**: the four `wp_ajax_nom_*` handlers (plus `check_nonce()`), the never-included `admin/views/dashboard.php`, `assets/js/admin.js`, and `assets/css/admin.css`. These were superseded by the REST API and had no live client.
-- `admin/class-admin.php` drops leftover `error_log`/`print_r` debug output from the analytics endpoint.
+- Removed two leftover `error_log` debug blocks from `includes/class-nginx-cache-manager.php`: one in `log_cache_activity()` that echoed the action's type before insert, and one in `get_recent_activities()` that echoed every row it had just read. The removal had already been claimed for the previous unreleased version but had been missed.
+  - The intentional `error_log( $log_entry )` in `log_cache_activity()`, which writes the formatted activity line to the PHP error log when `WP_DEBUG_LOG` is on, is **not** debug output and is deliberately kept.
+- Every JSX module now imports `React` explicitly (`src/index.js` and all of `src/components/`). This is required by the classic JSX runtime introduced above, which compiles JSX to `React.createElement` instead of importing it from `react/jsx-runtime`.
+- Settings form controls opt into the WordPress 7.0 / 7.1 default styles via the `__nextHasNoMarginBottom` and `__next40pxDefaultSize` props. Both are inert no-ops on the `wp-components` builds this plugin still supports, so passing them now is safe and keeps the console free of the deprecation warnings they silence.
 
 ### Security
-- Added `current_user_can( 'manage_options' )` to the read-only AJAX handlers that previously checked only a nonce. (The handlers have since been removed; all `nom/v1` routes already gated by `check_permissions()`.)
+- All `nom/v1` routes are gated by `check_permissions()`.
 
 ## [1.3.3] - 2026-09-21
 

@@ -1,0 +1,53 @@
+name: "JS Test, Lint and Build"
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  js:
+    name: "Test, Lint and Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install NPM Dependencies
+        # `npm ci` installs exactly what package-lock.json pins. `npm install`
+        # would resolve loose ranges afresh, so CI could test a dependency tree
+        # that differs from the released build.
+        run: npm ci
+
+      - name: Lint JavaScript
+        run: npm run lint:js
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        # Runs after the build on purpose. src/__tests__/build-asset.test.js
+        # asserts against build/index.asset.php and against babel.config.js /
+        # webpack.config.js; building first means it guards the artifact this
+        # run actually produced rather than a committed one that may be stale.
+        run: npm test
+
+      - name: Confirm the release artifact carries no react-jsx-runtime handle
+        if: always()
+        run: |
+          if grep -q "react-jsx-runtime" build/index.asset.php; then
+            echo "::error::build/index.asset.php declares the react-jsx-runtime handle (WordPress 6.6+)"
+            exit 1
+          fi
+          echo "build/index.asset.php is free of react-jsx-runtime"

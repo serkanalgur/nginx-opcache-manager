@@ -4,6 +4,7 @@
  * @package Nginx_Opcache_Manager
  */
 
+import React from 'react';
 import { Card, CardBody } from '@wordpress/components';
 
 /**

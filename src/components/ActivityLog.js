@@ -4,6 +4,7 @@
  * @package Nginx_Opcache_Manager
  */
 
+import React from 'react';
 import { Card, CardHeader, CardBody, Button } from '@wordpress/components';
 import { formatDate } from '../utils/helpers';
 

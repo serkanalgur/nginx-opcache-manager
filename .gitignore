@@ -18,8 +18,11 @@ vendor/
 .env.*.local
 
 # Dependencies
+# package-lock.json is deliberately NOT ignored. The build is what CI runs, and
+# an unpinned tree means CI compiles a different dependency graph from the one
+# that was tested locally — the exact class of bug the committed build/ directory
+# is meant to rule out. CI installs with `npm ci` to consume it.
 node_modules/
-package-lock.json
 yarn.lock
 
 # Build files

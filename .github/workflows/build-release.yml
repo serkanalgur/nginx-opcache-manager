@@ -30,7 +30,11 @@ jobs:
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Install NPM Dependencies
-        run: npm install
+        # `npm ci`, not `npm install`: this is a release build and must use
+        # exactly the tree package-lock.json pins. `npm install` may silently
+        # resolve a different version of a loose range, so the released bundle
+        # would not be the bundle that was tested.
+        run: npm ci
 
       - name: Build React Admin Panel
         run: npm run build

@@ -4,7 +4,8 @@
  * @package Nginx_Opcache_Manager
  */
 
-import { useState, useEffect, createRoot } from '@wordpress/element';
+import React from 'react';
+import { useState, useEffect, useRef, createRoot } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	TabPanel,
@@ -26,6 +27,7 @@ import {
 	fetchSettings,
 	updateSettings,
 	fetchLogs,
+	clearLogs,
 	fetchAnalytics,
 } from './utils/api';
 import { formatBytes, formatNumber } from './utils/helpers';
@@ -37,12 +39,27 @@ import NoticeComponent from './components/Notice';
 import './style.css';
 
 /**
+ * How often the activity log is re-read, in milliseconds.
+ *
+ * Shared by the poll timer and the notice-suppression window so the two can
+ * never drift apart.
+ *
+ * @type {number}
+ */
+const LOG_POLL_INTERVAL = 30000;
+
+/**
  * Ask for confirmation before a destructive action.
  *
- * Uses the `wp.confirm` implementation WordPress core ships in wp-util (there
- * is no npm `@wordpress/confirm` package). admin/class-admin.php declares
- * `wp-util` as a script dependency of this screen, so `wp.confirm` is
- * guaranteed to load alongside the admin panel.
+ * Prefers the `wp.confirm` implementation WordPress core ships in wp-util
+ * (there is no npm `@wordpress/confirm` package); admin/class-admin.php
+ * declares `wp-util` as a script dependency of this screen.
+ *
+ * If `wp.confirm` is nonetheless missing — another script registered it as a
+ * dependency it never actually provides, or it failed to load — fall back to
+ * the native dialog. Returning `false` here would abort every destructive
+ * action with no prompt, no notice and no console output, which is
+ * indistinguishable from the buttons being dead.
  *
  * @param {string} message Confirmation question.
  * @return {boolean} True when the user confirms.
@@ -52,9 +69,18 @@ function confirmAction( message ) {
 		return Boolean( window.wp.confirm( message ) );
 	}
 
-	// Unreachable while wp-util stays a declared dependency; fail safe rather
-	// than run a destructive action unconfirmed.
-	return false;
+	/*
+	 * The console warning and the native dialog below are both intentional.
+	 * The warning is the only signal that wp-util did not load, and suppressing
+	 * the dialog would reintroduce the silent no-op this helper guards.
+	 */
+	// eslint-disable-next-line no-console
+	console.warn(
+		'NOM: wp-util/wp.confirm unavailable; falling back to native confirm().'
+	);
+
+	// eslint-disable-next-line no-alert
+	return window.confirm( message );
 }
 
 /**
@@ -65,13 +91,20 @@ function DashboardPage() {
 	const [ loading, setLoading ] = useState( true );
 	const [ clearing, setClearing ] = useState( false );
 	const [ resetting, setResetting ] = useState( false );
+	const [ clearingLogs, setClearingLogs ] = useState( false );
 	const [ notice, setNotice ] = useState( null );
+	const [ refreshError, setRefreshError ] = useState( null );
 	const [ logs, setLogs ] = useState( [] );
+
+	// Timestamp of the last notice an action handler set. The activity-log
+	// poll uses it to decide whether a success banner it finds on screen is
+	// still the fresh outcome of the action the user just performed.
+	const lastActionAt = useRef( 0 );
 
 	useEffect( () => {
 		loadStats();
 		loadLogs();
-		const interval = setInterval( loadLogs, 30000 );
+		const interval = setInterval( loadLogs, LOG_POLL_INTERVAL );
 		return () => clearInterval( interval );
 	}, [] );
 
@@ -87,28 +120,74 @@ function DashboardPage() {
 		}
 	};
 
-	const loadLogs = async () => {
+	/**
+	 * Read the activity log.
+	 *
+	 * @param {Object}  [options]              - Load options.
+	 * @param {boolean} [options.reportErrors] - Whether a failure should be
+	 *                                         reported through the notice
+	 *                                         area. Defaults to true, which
+	 *                                         is what the poll wants. Action
+	 *                                         handlers pass false because
+	 *                                         they need to describe the
+	 *                                         failure themselves.
+	 * @return {Promise<boolean>} True when the log was read successfully.
+	 */
+	const loadLogs = async ( { reportErrors = true } = {} ) => {
 		try {
 			const data = await fetchLogs();
 			setLogs( data.logs || [] );
+			return true;
 		} catch ( error ) {
-			// This runs on a 30s poll, so a naive setNotice would re-fire every
-			// 30s for as long as the endpoint stays broken. Keep the first
-			// failure on screen instead of rewriting it with an identical copy,
-			// and never clobber a success notice an action handler just set.
-			setNotice( ( current ) =>
-				current?.type === 'error'
-					? current
-					: {
-							type: 'error',
-							message:
-								error.message ||
-								__(
-									'Failed to load activity logs.',
-									'nginx-opcache-manager'
-								),
-					  }
-			);
+			if ( ! reportErrors ) {
+				return false;
+			}
+
+			/*
+			 * This runs on a poll, so an unconditional setNotice would re-fire
+			 * every 30s for as long as the endpoint stays broken. But the
+			 * opposite extreme — suppressing whenever *any* notice is already
+			 * on screen — is worse: a success banner left up by an action would
+			 * hide an indefinitely failing endpoint until the user dismissed
+			 * it, which is the same silent no-op this release exists to fix.
+			 *
+			 * Suppress only these two cases:
+			 *  1. the identical failure is already on screen (re-firing would
+			 *     just rewrite an identical banner);
+			 *  2. a success banner that a *recent* action set, i.e. one that
+			 *     arrived within one poll window of that action. It is the
+			 *     authoritative outcome of what the user just did, so it wins
+			 *     over a background read. Past that window it is stale history
+			 *     and a live failure takes over.
+			 */
+			const failure = {
+				type: 'error',
+				message:
+					error.message ||
+					__(
+						'Failed to load activity logs.',
+						'nginx-opcache-manager'
+					),
+			};
+
+			setNotice( ( current ) => {
+				if (
+					current &&
+					current.type === failure.type &&
+					current.message === failure.message
+				) {
+					return current;
+				}
+
+				const successIsFresh =
+					current &&
+					current.type === 'success' &&
+					Date.now() - lastActionAt.current < LOG_POLL_INTERVAL;
+
+				return successIsFresh ? current : failure;
+			} );
+
+			return false;
 		}
 	};
 
@@ -120,10 +199,25 @@ function DashboardPage() {
 		}
 		try {
 			setClearing( true );
+			setRefreshError( null );
 			const result = await clearNginxCache();
+			lastActionAt.current = Date.now();
 			setNotice( { type: 'success', message: result.message } );
 			await loadStats();
-			await loadLogs();
+			/*
+			 * The action itself succeeded, so its success notice is genuine
+			 * and must stay exactly as the server worded it. But the reload
+			 * still has to be reported: without this the user reads a green
+			 * banner over a list that never refreshed.
+			 */
+			if ( ! ( await loadLogs( { reportErrors: false } ) ) ) {
+				setRefreshError(
+					__(
+						'The activity log below could not be refreshed and may be out of date.',
+						'nginx-opcache-manager'
+					)
+				);
+			}
 		} catch ( error ) {
 			setNotice( { type: 'error', message: error.message } );
 		} finally {
@@ -138,12 +232,62 @@ function DashboardPage() {
 		try {
 			setResetting( true );
 			const result = await resetOpcache();
+			lastActionAt.current = Date.now();
 			setNotice( { type: 'success', message: result.message } );
 			await loadStats();
 		} catch ( error ) {
 			setNotice( { type: 'error', message: error.message } );
 		} finally {
 			setResetting( false );
+		}
+	};
+
+	const handleClearLogs = async () => {
+		// Clearing the log is an irreversible delete of the audit trail, so it
+		// is gated the same way the other two destructive actions are.
+		if (
+			! confirmAction(
+				__(
+					'Are you sure you want to permanently clear the activity log?',
+					'nginx-opcache-manager'
+				)
+			)
+		) {
+			return;
+		}
+		try {
+			setClearingLogs( true );
+			setRefreshError( null );
+			await clearLogs();
+			lastActionAt.current = Date.now();
+
+			/*
+			 * The delete already happened, so the outcome is never a plain
+			 * "failed". If the follow-up read fails the list on screen is the
+			 * pre-delete one, so say both things rather than showing a bare
+			 * success banner over stale rows.
+			 */
+			if ( await loadLogs( { reportErrors: false } ) ) {
+				setNotice( {
+					type: 'success',
+					message: __(
+						'Activity log cleared.',
+						'nginx-opcache-manager'
+					),
+				} );
+			} else {
+				setNotice( {
+					type: 'warning',
+					message: __(
+						'Activity log cleared, but the refreshed list could not be loaded.',
+						'nginx-opcache-manager'
+					),
+				} );
+			}
+		} catch ( error ) {
+			setNotice( { type: 'error', message: error.message } );
+		} finally {
+			setClearingLogs( false );
 		}
 	};
 
@@ -168,6 +312,14 @@ function DashboardPage() {
 					type={ notice.type }
 					message={ notice.message }
 					onDismiss={ () => setNotice( null ) }
+				/>
+			) }
+
+			{ refreshError && (
+				<NoticeComponent
+					type="warning"
+					message={ refreshError }
+					onDismiss={ () => setRefreshError( null ) }
 				/>
 			) }
 
@@ -278,7 +430,11 @@ function DashboardPage() {
 				/>
 			</div>
 
-			<ActivityLog logs={ logs } onClear={ loadLogs } />
+			<ActivityLog
+				logs={ logs }
+				onClear={ handleClearLogs }
+				isClearing={ clearingLogs }
+			/>
 		</div>
 	);
 }
@@ -513,8 +669,16 @@ function SettingsPage() {
 					<h2>{ 'Nginx Cache Settings' }</h2>
 				</CardHeader>
 				<CardBody>
+					{ /*
+					 * __nextHasNoMarginBottom / __next40pxDefaultSize opt into
+					 * the styles WordPress makes default in 7.0 / 7.1. Both are
+					 * no-ops on the older wp-components builds this plugin still
+					 * supports (an unrecognised prop is ignored), so passing them
+					 * now is safe and keeps the console clean.
+					 */ }
 					<PanelRow>
 						<ToggleControl
+							__nextHasNoMarginBottom
 							label={ 'Enable Nginx Cache Monitoring' }
 							checked={ formData.nginx_cache_enabled || false }
 							onChange={ ( val ) =>
@@ -524,6 +688,8 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<TextControl
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
 							label={ 'Nginx Cache Path' }
 							value={ formData.nginx_cache_path || '' }
 							onChange={ ( val ) =>
@@ -534,6 +700,8 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<TextControl
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
 							label={ 'Fastcgi Cache Key Schema' }
 							value={ formData.fastcgi_cache_key_schema || '' }
 							onChange={ ( val ) =>
@@ -544,6 +712,7 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
+							__nextHasNoMarginBottom
 							label={ 'Auto-Flush Cache on Content Changes' }
 							checked={
 								formData.enable_post_cache_flush || false
@@ -555,6 +724,7 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
+							__nextHasNoMarginBottom
 							label={ 'Auto-Flush Product Cache (WooCommerce)' }
 							checked={
 								formData.enable_woocommerce_flush || false
@@ -566,6 +736,7 @@ function SettingsPage() {
 					</PanelRow>
 					<PanelRow>
 						<ToggleControl
+							__nextHasNoMarginBottom
 							label={ 'Enable Notifications' }
 							checked={ formData.enable_notifications || false }
 							onChange={ ( val ) =>
@@ -583,6 +754,7 @@ function SettingsPage() {
 				<CardBody>
 					<PanelRow>
 						<ToggleControl
+							__nextHasNoMarginBottom
 							label={ 'Enable Scheduled Purge' }
 							checked={ formData.schedule_enabled || false }
 							onChange={ ( val ) =>
@@ -649,31 +821,102 @@ function SettingsPage() {
 }
 
 /**
- * Main App Component
+ * The tabs this App offers, matching the `data-tab` values written by
+ * admin/views/react-dashboard.php.
+ *
+ * Declared once. `TAB_NAMES` is derived from it below so the allow-list used
+ * by `resolveTab()` cannot drift away from the tabs that are actually
+ * rendered — a tab added here is valid immediately, and a tab removed here
+ * stops resolving in the same commit.
+ *
+ * @type {Array<Object>}
  */
-export function App() {
+const TABS = [
+	{
+		name: 'dashboard',
+		title: 'Dashboard',
+		className: 'nom-tab-dashboard',
+	},
+	{
+		name: 'analytics',
+		title: 'Analytics',
+		className: 'nom-tab-analytics',
+	},
+	{
+		name: 'settings',
+		title: 'Settings',
+		className: 'nom-tab-settings',
+	},
+];
+
+/**
+ * Tab names the admin screens can open on.
+ *
+ * @type {Array<string>}
+ */
+const TAB_NAMES = TABS.map( ( tab ) => tab.name );
+
+/**
+ * Narrow an arbitrary value to one of the tabs this App knows about.
+ *
+ * TabPanel renders *nothing at all* when it is handed an `initialTabName`
+ * that matches no tab (it waits for the named tab to be declared), so an
+ * unrecognised value has to be rejected here rather than passed through.
+ *
+ * @param {string|undefined} name Candidate tab name.
+ * @return {string} A valid tab name.
+ */
+function resolveTab( name ) {
+	return TAB_NAMES.includes( name ) ? name : 'dashboard';
+}
+
+/**
+ * Resolve the tab to open on from the root element's `data-tab` attribute.
+ *
+ * The three admin screens all include the same view, so without this every
+ * screen opened the Dashboard — Settings had no "Save Settings" button on
+ * screen at all. Anything absent or unrecognised falls back to the Dashboard.
+ *
+ * @param {HTMLElement|null} rootElement Root mount element.
+ * @return {string} A valid tab name.
+ */
+export function getInitialTab( rootElement ) {
+	return resolveTab( rootElement?.dataset?.tab );
+}
+
+/**
+ * Main App Component
+ *
+ * @param {Object} props            - Component props.
+ * @param {string} props.initialTab - Tab to open on.
+ * @return {JSX.Element} App component.
+ */
+export function App( { initialTab = 'dashboard' } ) {
+	const activeTabName = resolveTab( initialTab );
+
 	return (
 		<div className="nom-app">
 			<TabPanel
 				className="nom-tab-panel"
 				activeClass="nom-tab-active"
-				tabs={ [
-					{
-						name: 'dashboard',
-						title: 'Dashboard',
-						className: 'nom-tab-dashboard',
-					},
-					{
-						name: 'analytics',
-						title: 'Analytics',
-						className: 'nom-tab-analytics',
-					},
-					{
-						name: 'settings',
-						title: 'Settings',
-						className: 'nom-tab-settings',
-					},
-				] }
+				/*
+				 * `initialTabName` is the prop @wordpress/components reads from
+				 * WordPress 6.6 onwards; `initialTab` was its name before that and
+				 * was removed outright (no alias shim) from the 28.x build.
+				 * `wp-components` is a runtime global supplied by the host and
+				 * this plugin supports WordPress 6.2+, so the only way to cover
+				 * both is to pass both. The extra prop is inert on either version:
+				 * TabPanel destructures its known props explicitly and never
+				 * spreads the rest onto a DOM node, so an unrecognised prop is
+				 * silently dropped rather than warned about or leaked to the DOM.
+				 *
+				 * Passing only `initialTabName` would silently regress every
+				 * install below 6.6 back to the Dashboard tab — exactly the bug
+				 * this prop plumbing exists to fix.
+				 */
+				initialTabName={ activeTabName }
+				initialTab={ activeTabName }
+				tabs={ TABS }
 			>
 				{ ( tab ) => {
 					switch ( tab.name ) {
@@ -699,6 +942,6 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const rootElement = document.getElementById( 'nom-react-root' );
 	if ( rootElement ) {
 		const root = createRoot( rootElement );
-		root.render( <App /> );
+		root.render( <App initialTab={ getInitialTab( rootElement ) } /> );
 	}
 } );

@@ -10,6 +10,7 @@
  * @package Nginx_Opcache_Manager
  */
 
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 // Real apiFetch exposes `.use()` for middleware registration; the mock needs it

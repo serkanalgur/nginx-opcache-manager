@@ -4,6 +4,7 @@
  * @package Nginx_Opcache_Manager
  */
 
+import React from 'react';
 import { Card, CardHeader, CardBody } from '@wordpress/components';
 import {
 	Chart as ChartJS,

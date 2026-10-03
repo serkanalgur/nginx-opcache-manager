@@ -2,10 +2,10 @@
 Contributors: kaisercrazy
 Donate link: https://example.com/donate
 Tags: nginx, cache, opcache, performance, optimization, server management
-Requires at least: 4.7
+Requires at least: 6.2
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,7 +59,7 @@ Nginx Opcache Manager is a powerful WordPress plugin that provides complete cont
 
 = Requirements =
 
-* WordPress 4.7 or higher
+* WordPress 6.2 or higher
 * PHP 7.2 or higher
 * Nginx web server (for cache features)
 * PHP Opcache extension (optional but recommended)
@@ -277,12 +277,23 @@ Yes, the plugin includes hooks and filters for developers to create custom exten
 
 == Changelog ==
 
-= 1.3.4 - October 3, 2026 =
+= 1.3.5 - October 3, 2026 =
 
+* **Fixed** Admin buttons did nothing - the confirmation helper failed silently when wp.confirm was unavailable, aborting both destructive actions with no prompt and no error
+* **Fixed** Activity log "Clear" button re-fetched the list instead of clearing it - it now deletes, behind a confirmation prompt
+* **Fixed** Errors rendered as blue info banners because the Notice component read a prop no caller supplied
+* **Fixed** Settings and Analytics screens opened the Dashboard tab
+* **Fixed** Build required react-jsx-runtime (WordPress 6.6+) despite claiming 4.7 support, leaving the panel blank on older installs
+* **Fixed** Support floor corrected to WordPress 6.2 - the plugin header, readme and package.json engines all claimed 4.7 while the build in fact needed a 6.6 script handle
+* **Fixed** A failed activity-log reload after a successful action was hidden behind the action's success banner
 * **Fixed** REST API returned 403 on every request - admin panel never sent the X-WP-Nonce header
 * **Fixed** `npm run lint:js` crash caused by a TypeScript 7 / @typescript-eslint mismatch
 * **Added** React smoke test covering the REST contract
+* **Added** CI workflow running the unit test suite, `npm run lint:js` and a production build
+* **Added** wp-util declared as a script dependency of the admin screen, so wp.confirm() is actually loaded
+* **Changed** package-lock.json is now committed and CI installs with `npm ci`, so CI builds the dependency tree the lockfile pins rather than whatever resolves on the day
 * **Removed** Dead legacy AJAX actions, unused admin view template, and unreferenced assets
+* **Removed** Two leftover error_log debug blocks in includes/class-nginx-cache-manager.php, one in log_cache_activity() and one in get_recent_activities(), which echoed types and every row read on each dashboard load. The intentional WP_DEBUG_LOG activity line in log_cache_activity() is kept
 
 = 1.3.2 - September 21, 2026 =
 

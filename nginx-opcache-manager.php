@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Nginx Opcache Manager
  * Description: Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics
- * Version: 1.3.4
+ * Version: 1.3.5
  * Author: Serkan Algur
  * Author URI: https://github.com/serkanalgur
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: nginx-opcache-manager
  * Domain Path: /languages
- * Requires: 4.7
+ * Requires: 6.2
  * Requires PHP: 7.2
  *
  * @package Nginx_Opcache_Manager
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants
  */
-define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.3.4' );
+define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.3.5' );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_FILE', __FILE__ );
