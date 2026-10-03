@@ -4,7 +4,11 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.3.5] - 2026-10-03
+## [1.3.6] - 2026-10-03
+
+> **Note:** the `v1.3.5` tag exists but was never released. Its build failed in CI
+> because the `package-lock.json` committed at that tag is incomplete, so `npm ci`
+> could not resolve a full tree. `1.3.6` carries the same fixes on a working lockfile.
 
 ### Fixed
 - **Admin buttons did nothing (critical)**: `confirmAction()` returned `false` with no prompt, no notice and no console output whenever `wp.confirm` was unavailable, so **both** destructive actions — Clear Nginx Cache and Reset Opcache — aborted silently and looked like dead buttons. It now falls back to the native `window.confirm()` and logs a `console.warn` so the degradation is observable.
@@ -20,14 +24,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - Failures now surface the server's real `code`/`message` instead of apiFetch's generic "status of 403"
 - **`npm run lint:js` crashed**: `typescript` floated to v7 via loose peer ranges, breaking `ts-api-utils`/`@typescript-eslint`. Pinned to `~5.2.2` via devDependency + `overrides`.
 - **`update_settings()` iterated `null`**: `get_json_params()` returns `null` for a non-JSON body; now falls back to `get_body_params()`.
+- **Declared support floor was wrong**: the plugin header, `readme.txt` and the `package.json` `engines` block all claimed WordPress 4.7, which the build has not honoured for some time. Corrected to **6.2** in all three, with a matching `browserslist` block.
+- **`npm ci` could not run against the committed lockfile**: the lock first committed in this cycle described only 1653 of the 1692 packages a full install resolves, leaving 39 pinned by no lock entry at all, and `npm ci` refuses to install from an incomplete lock. `npm install` had masked this by silently re-resolving. The lockfile is regenerated: 39 entries added, none removed, no existing version changed.
 
 ### Added
-- React smoke test (`src/__tests__/app.test.js`) mounting the admin against a mocked API, covering the nonce registration, request paths, and REST error unwrapping.
+- **LICENSE** file carrying the GPLv2 text, matching the `GPL-2.0-or-later` declared in `package.json` and `composer.json`. WordPress.org's plugin directory requires a license file, and its absence was a publishing blocker.
+- **49 regression tests across 6 suites** (`src/__tests__/`), locking in each of the fixes above so they cannot silently regress: activity-log poll behaviour under fake timers, dashboard action handlers, the initial-tab routing, `Notice` rendering, and the build asset file contract.
+- **`.github/workflows/js-test.yml`** — CI running `npm run lint:js`, `npm test` and a production `npm run build` on every push and pull request, so a broken bundle or a failing suite is caught before a tag is cut.
+- **React smoke test** (`src/__tests__/app.test.js`) mounting the admin against a mocked API, covering the nonce registration, request paths, and REST error unwrapping.
 - `.eslintrc.js` and `.eslintignore`; `src/` is now lint-clean (0 errors).
 - `admin/class-admin.php` declares `wp-util` as a script dependency of the React admin screen, so the `wp.confirm()` dialog is actually loaded. `confirmAction()` had been assuming it was present; the dependency it was written against had never been declared.
 - Confirmation prompt on the activity-log "Clear" button. It is an irreversible delete of the audit trail and was the one destructive action with no prompt.
 
 ### Changed
+- **`package-lock.json` is now committed and CI installs with `npm ci`**, so the dependency tree that is tested is the tree that is built, rather than whatever the loose ranges resolve to on the day.
 - **Removed the dead legacy AJAX surface**: the four `wp_ajax_nom_*` handlers (plus `check_nonce()`), the never-included `admin/views/dashboard.php`, `assets/js/admin.js`, and `assets/css/admin.css`. These were superseded by the REST API and had no live client.
 - Removed two leftover `error_log` debug blocks from `includes/class-nginx-cache-manager.php`: one in `log_cache_activity()` that echoed the action's type before insert, and one in `get_recent_activities()` that echoed every row it had just read. The removal had already been claimed for the previous unreleased version but had been missed.
   - The intentional `error_log( $log_entry )` in `log_cache_activity()`, which writes the formatted activity line to the PHP error log when `WP_DEBUG_LOG` is on, is **not** debug output and is deliberately kept.

@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 6.2
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -277,7 +277,9 @@ Yes, the plugin includes hooks and filters for developers to create custom exten
 
 == Changelog ==
 
-= 1.3.5 - October 3, 2026 =
+= 1.3.6 - October 3, 2026 =
+
+Note: the `v1.3.5` tag exists but was never released - its build failed in CI because the package-lock.json committed at that tag is incomplete, so `npm ci` could not resolve a full tree. 1.3.6 carries the same fixes on a working lockfile.
 
 * **Fixed** Admin buttons did nothing - the confirmation helper failed silently when wp.confirm was unavailable, aborting both destructive actions with no prompt and no error
 * **Fixed** Activity log "Clear" button re-fetched the list instead of clearing it - it now deletes, behind a confirmation prompt
@@ -285,13 +287,16 @@ Yes, the plugin includes hooks and filters for developers to create custom exten
 * **Fixed** Settings and Analytics screens opened the Dashboard tab
 * **Fixed** Build required react-jsx-runtime (WordPress 6.6+) despite claiming 4.7 support, leaving the panel blank on older installs
 * **Fixed** Support floor corrected to WordPress 6.2 - the plugin header, readme and package.json engines all claimed 4.7 while the build in fact needed a 6.6 script handle
+* **Fixed** `npm ci` could not run against the committed lockfile - it described only 1653 of the 1692 packages a full install resolves, leaving 39 pinned by no lock entry. `npm install` had masked this by silently re-resolving; the lockfile has been regenerated (39 entries added, none removed, no existing version changed)
 * **Fixed** A failed activity-log reload after a successful action was hidden behind the action's success banner
 * **Fixed** REST API returned 403 on every request - admin panel never sent the X-WP-Nonce header
 * **Fixed** `npm run lint:js` crash caused by a TypeScript 7 / @typescript-eslint mismatch
 * **Added** React smoke test covering the REST contract
+* **Added** 49 regression tests across 6 suites, locking in each fix above so it cannot silently regress, including fake-timer coverage of the 30s activity-log poll
 * **Added** CI workflow running the unit test suite, `npm run lint:js` and a production build
+* **Added** LICENSE file carrying the GPLv2 text, matching the GPL-2.0-or-later already declared in package.json and composer.json
 * **Added** wp-util declared as a script dependency of the admin screen, so wp.confirm() is actually loaded
-* **Changed** package-lock.json is now committed and CI installs with `npm ci`, so CI builds the dependency tree the lockfile pins rather than whatever resolves on the day
+* **Changed** package-lock.json is now committed and CI installs with `npm ci`, so CI builds the dependency tree the lockfile pins rather than whatever resolves on the day. The lock committed for 1.3.5 was itself incomplete and has been regenerated here (39 entries added, none removed, no existing version changed) so that `npm ci` resolves
 * **Removed** Dead legacy AJAX actions, unused admin view template, and unreferenced assets
 * **Removed** Two leftover error_log debug blocks in includes/class-nginx-cache-manager.php, one in log_cache_activity() and one in get_recent_activities(), which echoed types and every row read on each dashboard load. The intentional WP_DEBUG_LOG activity line in log_cache_activity() is kept
 
