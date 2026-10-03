@@ -9,24 +9,39 @@ import { Card, CardBody } from '@wordpress/components';
 /**
  * Displays a single or dual metric in a card format.
  *
- * @param {Object}   props             - Component props.
- * @param {string}   props.title       - Card title.
- * @param {string}   props.icon        - Dashicons class name.
- * @param {string}   props.color       - Accent color.
- * @param {Object}   props.primary     - Primary metric: { value, label }.
- * @param {Object}   props.secondary   - Secondary metric: { value, label }.
+ * @param {Object} props           - Component props.
+ * @param {string} props.title     - Card title.
+ * @param {string} props.icon      - Dashicons class name.
+ * @param {string} props.color     - Accent color.
+ * @param {Object} props.primary   - Primary metric: { value, label }.
+ * @param {Object} props.secondary - Secondary metric: { value, label }.
  * @return {JSX.Element} Stat card component.
  */
-export default function StatCard( { title, icon, color = '#2271b1', primary, secondary } ) {
+export default function StatCard( {
+	title,
+	icon,
+	color = '#2271b1',
+	primary,
+	secondary,
+} ) {
 	return (
 		<Card className="nom-stat-card">
 			<CardBody>
 				<div className="nom-stat-card__top">
 					<div
 						className="nom-stat-card__icon"
-						style={ { background: 'linear-gradient(135deg, ' + color + ', ' + color + 'dd)' } }
+						style={ {
+							background:
+								'linear-gradient(135deg, ' +
+								color +
+								', ' +
+								color +
+								'dd)',
+						} }
 					>
-						{ icon && <span className={ `dashicons ${ icon }` }></span> }
+						{ icon && (
+							<span className={ `dashicons ${ icon }` }></span>
+						) }
 					</div>
 					<div className="nom-stat-card__title-wrap">
 						<span className="nom-stat-card__label">{ title }</span>
@@ -36,10 +51,15 @@ export default function StatCard( { title, icon, color = '#2271b1', primary, sec
 				<div className="nom-stat-card__metrics">
 					{ primary && (
 						<div className="nom-stat-card__metric">
-							<span className="nom-stat-card__value" style={ { color } }>
+							<span
+								className="nom-stat-card__value"
+								style={ { color } }
+							>
 								{ primary.value }
 							</span>
-							<span className="nom-stat-card__metric-label">{ primary.label }</span>
+							<span className="nom-stat-card__metric-label">
+								{ primary.label }
+							</span>
 						</div>
 					) }
 					{ secondary && (
@@ -47,7 +67,9 @@ export default function StatCard( { title, icon, color = '#2271b1', primary, sec
 							<span className="nom-stat-card__value nom-stat-card__value--sm">
 								{ secondary.value }
 							</span>
-							<span className="nom-stat-card__metric-label">{ secondary.label }</span>
+							<span className="nom-stat-card__metric-label">
+								{ secondary.label }
+							</span>
 						</div>
 					) }
 				</div>

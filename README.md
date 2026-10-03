@@ -61,61 +61,48 @@ Configure:
 - Enable/disable admin notifications
 - View server information
 
-## AJAX Actions
+## API
 
-The plugin provides several AJAX endpoints:
+The admin panel talks to WordPress over the REST namespace `nom/v1`.
+Every route requires the `manage_options` capability, and authenticated
+requests must send an `X-WP-Nonce` header (the `nomData.nonce` value
+localized by `admin/class-admin.php`).
 
-### `nom_get_stats`
-Get current cache statistics.
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/wp-json/nom/v1/stats` | Current Nginx + Opcache statistics |
+| `POST` | `/wp-json/nom/v1/nginx/clear` | Clear the Nginx cache |
+| `POST` | `/wp-json/nom/v1/opcache/reset` | Reset PHP Opcache |
+| `GET` | `/wp-json/nom/v1/logs` | Recent flush log entries |
+| `POST` | `/wp-json/nom/v1/logs/clear` | Clear the activity log |
+| `GET` | `/wp-json/nom/v1/analytics` | Chart and summary data |
+| `GET` | `/wp-json/nom/v1/analytics/summary` | Summary and performance metrics |
+| `GET` | `/wp-json/nom/v1/settings` | Read plugin settings |
+| `POST` | `/wp-json/nom/v1/settings` | Update plugin settings |
+| `GET` | `/wp-json/nom/v1/server-info` | PHP/WordPress/server information |
 
-**Request:**
-```
-POST /wp-admin/admin-ajax.php
-action: nom_get_stats
-nonce: {nom_nonce}
-```
+Example response from `GET /wp-json/nom/v1/stats`:
 
-**Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "nginx": {
-      "enabled": true,
-      "cache_size": 1048576,
-      "cached_files": 42,
-      "cache_path": "/var/run/nginx-cache"
-    },
-    "opcache": {
-      "enabled": true,
-      "hit_rate": 98.5,
-      "used_memory": 67108864,
-      "cached_scripts": 120
-    }
+  "nginx": {
+    "enabled": true,
+    "cache_size": 1048576,
+    "cached_files": 42,
+    "cache_path": "/var/run/nginx-cache"
+  },
+  "opcache": {
+    "enabled": true,
+    "hit_rate": 98.5,
+    "used_memory": 67108864,
+    "cached_scripts": 120
   }
 }
 ```
 
-### `nom_clear_cache`
-Clear Nginx cache.
-
-**Request:**
-```
-POST /wp-admin/admin-ajax.php
-action: nom_clear_cache
-nonce: {nom_nonce}
-```
-
-### `nom_reset_opcache`
-Reset PHP Opcache.
-
-**Request:**
-```
-POST /wp-admin/admin-ajax.php
-action: nom_reset_opcache
-nonce: {nom_nonce}
-```
-
+> The legacy `admin-ajax.php` actions (`nom_get_stats`, `nom_clear_cache`,
+> `nom_reset_opcache`, `nom_get_flush_logs`) have been removed — they were
+> superseded by the REST routes above and had no live client.
 ## Directory Structure
 
 ```
@@ -125,19 +112,20 @@ nginx-opcache-manager/
 │   ├── class-admin.php                # Admin menu and settings
 │   ├── class-analytics.php            # Analytics functionality
 │   └── views/
-│       ├── dashboard.php              # Dashboard page template
-│       ├── analytics.php              # Analytics page template
-│       ├── settings.php               # Settings page template
-│       └── dashboard-widget.php       # Dashboard widget template
+│       ├── react-dashboard.php       # React mount point for all admin pages
+│       ├── analytics.php            # Analytics page template
+│       ├── settings.php             # Settings page template
+│       └── dashboard-widget.php     # Dashboard widget template
 ├── includes/
 │   ├── class-nginx-cache-manager.php # Nginx cache management
 │   ├── class-opcache-manager.php     # PHP Opcache management
 │   └── class-cache-stats.php         # Statistics tracking
-├── assets/
-│   ├── css/
-│   │   └── admin.css                 # Admin styles
-│   └── js/
-│       └── admin.js                  # Admin JavaScript
+├── src/                              # React admin panel source
+│   ├── index.js                      # App entry point
+│   ├── style.css                     # Bundled admin styles
+│   ├── components/                   # UI components
+│   ├── hooks/                        # Custom hooks
+│   └── utils/                        # REST client and formatters
 └── README.md
 
 ```

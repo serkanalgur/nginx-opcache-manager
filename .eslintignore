@@ -1,0 +1,8 @@
+# Generated bundle output — never lint compiled code.
+build/
+
+# Dependencies.
+node_modules/
+
+# PHP Composer dependencies (mirrors the wp-scripts default ignore file).
+vendor/

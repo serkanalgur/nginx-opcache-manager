@@ -4,6 +4,28 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-10-03
+
+### Fixed
+- **REST API 403 on every request (critical)**: The React admin panel never sent an `X-WP-Nonce` header. WordPress rejected all `nom/v1` calls — including reads — with `rest_cookie_invalid_nonce`, so the dashboard could not load at all.
+  - `src/utils/api.js` now registers `createNonceMiddleware` with the nonce localized as `nomData.nonce` (falling back to `wpApiSettings.nonce`)
+  - Failures now surface the server's real `code`/`message` instead of apiFetch's generic "status of 403"
+- **`npm run lint:js` crashed**: `typescript` floated to v7 via loose peer ranges, breaking `ts-api-utils`/`@typescript-eslint`. Pinned to `~5.2.2` via devDependency + `overrides`.
+- **`update_settings()` iterated `null`**: `get_json_params()` returns `null` for a non-JSON body; now falls back to `get_body_params()`.
+- **`loadLogs` error handling**: a failed activity-log fetch was only logged to the console and, once surfaced, re-fired every 30s from the poll timer, overwriting success notices.
+- **Confirmation dialog could abort silently**: `wp.confirm` was assumed present. `admin/class-admin.php` now declares `wp-util` as a script dependency.
+
+### Added
+- React smoke test (`src/__tests__/app.test.js`) mounting the admin against a mocked API, covering the nonce registration, request paths, and REST error unwrapping.
+- `.eslintrc.js` and `.eslintignore`; `src/` is now lint-clean (0 errors).
+
+### Changed
+- **Removed the dead legacy AJAX surface**: the four `wp_ajax_nom_*` handlers (plus `check_nonce()`), the never-included `admin/views/dashboard.php`, `assets/js/admin.js`, and `assets/css/admin.css`. These were superseded by the REST API and had no live client.
+- `admin/class-admin.php` drops leftover `error_log`/`print_r` debug output from the analytics endpoint.
+
+### Security
+- Added `current_user_can( 'manage_options' )` to the read-only AJAX handlers that previously checked only a nonce. (The handlers have since been removed; all `nom/v1` routes already gated by `check_permissions()`.)
+
 ## [1.3.3] - 2026-09-21
 
 ### Fixed

@@ -123,6 +123,11 @@ class Nginx_Opcache_Manager_Admin {
 				$version      = $asset_data['version'] ?? $version;
 			}
 
+			// wp-util provides `wp.confirm`, which the admin panel uses for its
+			// confirmation dialogs. The generated asset dependency list does not
+			// include it, so declare it explicitly here.
+			$dependencies[] = 'wp-util';
+
 			wp_enqueue_script(
 				'nom-react-admin',
 				NGINX_OPCACHE_MANAGER_PLUGIN_URL . 'build/index.js',

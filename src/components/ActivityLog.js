@@ -48,7 +48,11 @@ function getActionBadge( action ) {
  * @param {boolean}  props.isClearing - Whether clearing is in progress.
  * @return {JSX.Element} Activity log component.
  */
-export default function ActivityLog( { logs = [], onClear, isClearing = false } ) {
+export default function ActivityLog( {
+	logs = [],
+	onClear,
+	isClearing = false,
+} ) {
 	return (
 		<Card className="nom-activity-log">
 			<CardHeader className="nom-activity-log-header">
@@ -80,7 +84,11 @@ export default function ActivityLog( { logs = [], onClear, isClearing = false } 
 						{ logs.map( ( log, index ) => (
 							<div key={ index } className="nom-log-item">
 								<div className="nom-log-badge">
-									<span className={ `nom-badge ${ getActionBadge( log.action ) }` }>
+									<span
+										className={ `nom-badge ${ getActionBadge(
+											log.action
+										) }` }
+									>
 										{ log.action || 'unknown' }
 									</span>
 								</div>

@@ -10,9 +10,9 @@ import { apiGet } from '../utils/api';
 /**
  * Hook for fetching data from the API.
  *
- * @param {string}   endpoint    - API endpoint to fetch.
- * @param {boolean}  autoFetch   - Whether to fetch automatically on mount.
- * @param {number}   refetchInterval - Interval in ms to refetch (0 = no auto-refetch).
+ * @param {string}  endpoint        - API endpoint to fetch.
+ * @param {boolean} autoFetch       - Whether to fetch automatically on mount.
+ * @param {number}  refetchInterval - Interval in ms to refetch (0 = no auto-refetch).
  * @return {Object} { data, loading, error, refetch }
  */
 export function useApiData( endpoint, autoFetch = true, refetchInterval = 0 ) {
