@@ -31,8 +31,9 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'publish_post', array( $this, 'on_post_publish' ), 10, 2 );
 
 		// Term actions
-		add_action( 'edited_term', array( $this, 'on_term_edit' ), 10, 2 );
-		add_action( 'created_term', array( $this, 'on_term_create' ), 10, 2 );
+		add_action( 'edited_term', array( $this, 'on_term_edit' ), 10, 3 );
+		add_action( 'created_term', array( $this, 'on_term_create' ), 10, 3 );
+		add_action( 'before_delete_term', array( $this, 'on_term_delete' ), 10, 5 );
 
 		// Comment actions
 		add_action( 'comment_post', array( $this, 'on_comment_post' ), 10, 2 );
@@ -100,8 +101,16 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 	/**
 	 * Handle term edit (category, tag, etc.)
+	 *
+	 * @param int    $term_id  Term ID.
+	 * @param int    $tt_id    Term taxonomy ID.
+	 * @param string $taxonomy Taxonomy slug.
 	 */
-	public function on_term_edit( $term_id, $taxonomy ) {
+	public function on_term_edit( $term_id, $tt_id, $taxonomy ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		$term = get_term( $term_id, $taxonomy );
 		if ( is_wp_error( $term ) || ! isset( $term->term_id ) ) {
 			return;
@@ -117,9 +126,45 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 	/**
 	 * Handle term creation
+	 *
+	 * @param int    $term_id  Term ID.
+	 * @param int    $tt_id    Term taxonomy ID.
+	 * @param string $taxonomy Taxonomy slug.
 	 */
-	public function on_term_create( $term_id, $taxonomy ) {
-		$this->on_term_edit( $term_id, $taxonomy );
+	public function on_term_create( $term_id, $tt_id, $taxonomy ) {
+		$this->on_term_edit( $term_id, $tt_id, $taxonomy );
+	}
+
+	/**
+	 * Handle term deletion (purge its archive and the home page).
+	 *
+	 * @param int    $term_id      Term ID.
+	 * @param int    $tt_id        Term taxonomy ID.
+	 * @param object $deleted_term Term object being deleted.
+	 * @param array  $object_ids   Object IDs previously assigned to the term.
+	 * @param string $taxonomy     Taxonomy slug.
+	 */
+	public function on_term_delete( $term_id, $tt_id, $deleted_term, $object_ids, $taxonomy ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		$urls = array( home_url( '/' ) );
+
+		if ( is_object( $deleted_term ) && isset( $deleted_term->term_id ) ) {
+			$term_link = get_term_link( $deleted_term );
+			if ( ! is_wp_error( $term_link ) ) {
+				$urls[] = $term_link;
+			}
+		}
+
+		$this->flush_cache_for_urls( $urls );
+
+		$this->log_cache_flush(
+			'term_delete',
+			$term_id,
+			is_object( $deleted_term ) && isset( $deleted_term->name ) ? $deleted_term->name : ''
+		);
 	}
 
 	/**
