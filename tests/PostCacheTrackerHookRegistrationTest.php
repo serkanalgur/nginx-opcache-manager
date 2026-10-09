@@ -9,8 +9,10 @@
  * declared 2 of 3 and expected an object where WP passes the $commentdata
  * array. Whole hooks were missing too: trash/untrash left the trashed URL
  * cached, post_updated left the OLD permalink cached after a slug change,
- * before_delete_term never purged deleted term archives, and the five
- * WooCommerce product hooks were absent.
+ * the term-delete hook was registered under a name WordPress never fires so
+ * deleting a category/tag never purged its archive, previous term archives
+ * were stashed after the update had already written the new terms, and the
+ * five WooCommerce product hooks were absent.
  */
 
 use PHPUnit\Framework\TestCase;
@@ -31,10 +33,13 @@ final class PostCacheTrackerHookRegistrationTest extends TestCase {
 			'trashed_post'                       => array( 'trashed_post', 1 ),
 			'untrashed_post'                     => array( 'untrashed_post', 1 ),
 			'post_updated'                       => array( 'post_updated', 3 ),
+			// Fires before the update is written, while the OLD terms are
+			// still in the DB (post_updated sees only the new ones).
+			'pre_post_update'                    => array( 'pre_post_update', 2 ),
 			// Term hooks widened from 2 args / missing entirely.
 			'edited_term'                        => array( 'edited_term', 3 ),
 			'created_term'                       => array( 'created_term', 3 ),
-			'before_delete_term'                 => array( 'before_delete_term', 5 ),
+			'delete_term'                        => array( 'delete_term', 5 ),
 			// comment_post widened from 2 args (object) to WP's 3 (array).
 			'comment_post'                       => array( 'comment_post', 3 ),
 			// The five WooCommerce product hooks.

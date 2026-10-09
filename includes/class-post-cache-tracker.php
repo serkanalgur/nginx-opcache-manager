@@ -39,11 +39,14 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'trashed_post', array( $this, 'on_post_trash' ), 10, 1 );
 		add_action( 'untrashed_post', array( $this, 'on_post_untrash' ), 10, 1 );
 		add_action( 'post_updated', array( $this, 'on_post_updated' ), 10, 3 );
+		// Fires before the update is written, i.e. while the OLD terms are
+		// still in the DB and before clean_post_cache() runs.
+		add_action( 'pre_post_update', array( $this, 'on_pre_post_update' ), 10, 2 );
 
 		// Term actions
 		add_action( 'edited_term', array( $this, 'on_term_edit' ), 10, 3 );
 		add_action( 'created_term', array( $this, 'on_term_create' ), 10, 3 );
-		add_action( 'before_delete_term', array( $this, 'on_term_delete' ), 10, 5 );
+		add_action( 'delete_term', array( $this, 'on_term_delete' ), 10, 5 );
 
 		// Comment actions
 		add_action( 'comment_post', array( $this, 'on_comment_post' ), 10, 3 );
@@ -175,15 +178,6 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 			return;
 		}
 
-		// Capture the terms the post belonged to BEFORE this update. New terms
-		// are assigned after post_updated fires, so the taxonomy relationships
-		// read here are still the previous ones. Skipping brand-new posts
-		// (the pre-insert auto-draft) avoids purging terms that were never
-		// attached; the first save_post flush covers their archives.
-		if ( 'auto-draft' !== $post_before->post_status ) {
-			$this->stash_previous_term_urls( $post_before );
-		}
-
 		// Slug unchanged: the new-permalink flush on save_post already covers it.
 		if ( $post_after->post_name === $post_before->post_name ) {
 			return;
@@ -201,6 +195,40 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 			$this->flush_cache_for_urls( array( $old_permalink ) );
 			$this->log_cache_flush( 'post_slug_change', $post_id, $post_after->post_title );
 		}
+	}
+
+	/**
+	 * Handle the moment just before a post update is written.
+	 *
+	 * In wp_update_post() the new terms are set (wp_set_post_categories /
+	 * wp_set_post_tags) and the post cache is cleaned BEFORE post_updated
+	 * fires, so on_post_updated only ever sees the NEW terms. pre_post_update
+	 * fires while the OLD terms are still in the database and before
+	 * clean_post_cache(), so the previous term archives are read and stashed
+	 * here and merged into the next flush for this post.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $data    Unslashed data for the post being updated.
+	 */
+	public function on_pre_post_update( $post_id, $data ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		// Don't process auto-saves or revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// A post created for the first time reaches pre_post_update as an
+		// auto-draft with no previous terms; purging is covered by the
+		// save_post flush once it is published.
+		$status = get_post_status( $post_id );
+		if ( false === $status || 'auto-draft' === $status ) {
+			return;
+		}
+
+		$this->stash_previous_term_urls( get_post( $post_id ) );
 	}
 
 	/**
@@ -223,23 +251,23 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	}
 
 	/**
-	 * Capture the term archives a post belonged to before an update.
+	 * Capture the term archives a post belongs to before an update is written.
 	 *
-	 * post_updated fires before new taxonomies are assigned, so reading the
-	 * terms for the pre-update post ID still yields the previous ones. The
-	 * collected URLs are merged into the next flush for the same post so a
-	 * category/tag move purges the OLD archives too, not just the new ones.
+	 * Called from pre_post_update, before wp_update_post() assigns the new
+	 * taxonomies, so the relationships read here are still the previous ones.
+	 * The collected URLs are merged into the next flush for the same post so
+	 * a category/tag move purges the OLD archives too, not just the new ones.
 	 *
-	 * @param WP_Post $post_before Post object before the update.
+	 * @param WP_Post|null $post Post object in its pre-update state.
 	 */
-	private function stash_previous_term_urls( $post_before ) {
-		if ( 'post' !== $post_before->post_type ) {
+	private function stash_previous_term_urls( $post ) {
+		if ( ! is_object( $post ) || 'post' !== $post->post_type ) {
 			return;
 		}
 
 		$urls = array();
 
-		$cats = get_the_category( $post_before->ID );
+		$cats = get_the_category( $post->ID );
 		foreach ( $cats as $cat ) {
 			if ( $cat_link = get_category_link( $cat->term_id ) ) {
 				$urls[] = $cat_link;
@@ -247,7 +275,7 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		}
 
 		// get_the_tags() returns false (not an empty array) when no tags exist.
-		$tags = get_the_tags( $post_before->ID );
+		$tags = get_the_tags( $post->ID );
 		if ( $tags && ! is_wp_error( $tags ) ) {
 			foreach ( $tags as $tag ) {
 				if ( $tag_link = get_tag_link( $tag->term_id ) ) {
@@ -257,7 +285,7 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		}
 
 		if ( ! empty( $urls ) ) {
-			$this->previous_term_urls[ $post_before->ID ] = array_unique( $urls );
+			$this->previous_term_urls[ $post->ID ] = array_unique( $urls );
 		}
 	}
 
@@ -300,24 +328,22 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	/**
 	 * Handle term deletion (purge its archive and the home page).
 	 *
-	 * @param int    $term_id      Term ID.
-	 * @param int    $tt_id        Term taxonomy ID.
-	 * @param object $deleted_term Term object being deleted.
-	 * @param array  $object_ids   Object IDs previously assigned to the term.
-	 * @param string $taxonomy     Taxonomy slug.
+	 * @param int     $term_id      Term ID.
+	 * @param int     $tt_id        Term taxonomy ID.
+	 * @param string  $taxonomy     Taxonomy slug.
+	 * @param WP_Term $deleted_term Copy of the already-deleted term.
+	 * @param array   $object_ids   Object IDs previously assigned to the term.
 	 */
-	public function on_term_delete( $term_id, $tt_id, $deleted_term, $object_ids, $taxonomy ) {
+	public function on_term_delete( $term_id, $tt_id, $taxonomy, $deleted_term, $object_ids ) {
 		if ( ! $this->is_post_flush_enabled() ) {
 			return;
 		}
 
 		$urls = array( home_url( '/' ) );
 
-		if ( is_object( $deleted_term ) && isset( $deleted_term->term_id ) ) {
-			$term_link = get_term_link( $deleted_term );
-			if ( ! is_wp_error( $term_link ) ) {
-				$urls[] = $term_link;
-			}
+		$term_link = $this->get_deleted_term_link( $deleted_term, $taxonomy );
+		if ( $term_link ) {
+			$urls[] = $term_link;
 		}
 
 		$this->flush_cache_for_urls( $urls );
@@ -327,6 +353,50 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 			$term_id,
 			is_object( $deleted_term ) && isset( $deleted_term->name ) ? $deleted_term->name : ''
 		);
+	}
+
+	/**
+	 * Rebuild a deleted term's archive URL from its saved data.
+	 *
+	 * get_term_link() cannot be used here: 'delete_term' fires after the term
+	 * row is deleted and its cache cleaned, so get_term_link() re-queries the
+	 * database, finds nothing and returns a WP_Error. The URL is instead
+	 * reconstructed from the $deleted_term copy core passes to the hook,
+	 * mirroring how get_term_link() builds it.
+	 *
+	 * @param WP_Term|null $deleted_term Copy of the already-deleted term.
+	 * @param string       $taxonomy     Taxonomy slug.
+	 * @return string|false Term archive URL, or false when it cannot be built.
+	 */
+	private function get_deleted_term_link( $deleted_term, $taxonomy ) {
+		if ( ! is_object( $deleted_term ) || ! isset( $deleted_term->slug ) || '' === $deleted_term->slug ) {
+			return false;
+		}
+
+		// Rebuild the ancestor path (kept for hierarchical taxonomies such as
+		// categories); the parents themselves are still in the database.
+		$slug    = $deleted_term->slug;
+		$parent  = isset( $deleted_term->parent ) ? (int) $deleted_term->parent : 0;
+		while ( $parent > 0 ) {
+			$parent_term = get_term( $parent, $taxonomy );
+			if ( ! $parent_term || is_wp_error( $parent_term ) ) {
+				break;
+			}
+			$slug   = $parent_term->slug . '/' . $slug;
+			$parent = (int) $parent_term->parent;
+		}
+
+		global $wp_rewrite;
+
+		$termlink = $wp_rewrite->get_extra_permastruct( $taxonomy );
+
+		if ( empty( $termlink ) ) {
+			return home_url( "?taxonomy={$taxonomy}&term={$slug}" );
+		}
+
+		$termlink = str_replace( "%{$taxonomy}%", $slug, $termlink );
+
+		return home_url( user_trailingslashit( $termlink, 'category' ) );
 	}
 
 	/**
@@ -602,7 +672,7 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 				}
 			}
 
-			// Previous term archives (stashed by on_post_updated) so a
+			// Previous term archives (stashed by on_pre_post_update) so a
 			// category/tag move purges the terms the post was removed from.
 			if ( ! empty( $this->previous_term_urls[ $post->ID ] ) ) {
 				$urls = array_merge( $urls, $this->previous_term_urls[ $post->ID ] );
