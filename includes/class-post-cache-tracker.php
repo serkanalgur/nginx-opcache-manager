@@ -22,6 +22,13 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	private static $flushed_in_request = array();
 
 	/**
+	 * Term archive URLs captured before a post update, keyed by post ID.
+	 *
+	 * @var array
+	 */
+	private $previous_term_urls = array();
+
+	/**
 	 * Constructor - register hooks
 	 */
 	public function __construct() {
@@ -31,6 +38,7 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'publish_post', array( $this, 'on_post_publish' ), 10, 2 );
 		add_action( 'trashed_post', array( $this, 'on_post_trash' ), 10, 1 );
 		add_action( 'untrashed_post', array( $this, 'on_post_untrash' ), 10, 1 );
+		add_action( 'post_updated', array( $this, 'on_post_updated' ), 10, 3 );
 
 		// Term actions
 		add_action( 'edited_term', array( $this, 'on_term_edit' ), 10, 3 );
@@ -141,6 +149,116 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		}
 
 		$this->flush_post_cache( $post_id );
+	}
+
+	/**
+	 * Handle post updated (purges the old permalink when the slug changed).
+	 *
+	 * save_post fires after the update and only sees the new permalink, so
+	 * the pre-update slug is reconstructed from $post_before here.
+	 *
+	 * @param int     $post_id     Post ID.
+	 * @param WP_Post $post_after  Post object after the update.
+	 * @param WP_Post $post_before Post object before the update.
+	 */
+	public function on_post_updated( $post_id, $post_after, $post_before ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		// Don't process auto-saves or revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		if ( ! is_object( $post_after ) || ! is_object( $post_before ) ) {
+			return;
+		}
+
+		// Capture the terms the post belonged to BEFORE this update. New terms
+		// are assigned after post_updated fires, so the taxonomy relationships
+		// read here are still the previous ones. Skipping brand-new posts
+		// (the pre-insert auto-draft) avoids purging terms that were never
+		// attached; the first save_post flush covers their archives.
+		if ( 'auto-draft' !== $post_before->post_status ) {
+			$this->stash_previous_term_urls( $post_before );
+		}
+
+		// Slug unchanged: the new-permalink flush on save_post already covers it.
+		if ( $post_after->post_name === $post_before->post_name ) {
+			return;
+		}
+
+		// Dedupe within the same request (post_updated + save_post often fire together).
+		$dedupe_key = 'post_slug_change:' . $post_id;
+		if ( isset( self::$flushed_in_request[ $dedupe_key ] ) ) {
+			return;
+		}
+		self::$flushed_in_request[ $dedupe_key ] = true;
+
+		$old_permalink = $this->get_permalink_from_post_before( $post_before );
+		if ( $old_permalink ) {
+			$this->flush_cache_for_urls( array( $old_permalink ) );
+			$this->log_cache_flush( 'post_slug_change', $post_id, $post_after->post_title );
+		}
+	}
+
+	/**
+	 * Reconstruct a post's pre-update permalink from its pre-update data.
+	 *
+	 * get_permalink() builds the URL from the passed object's fields, so the
+	 * pre-update slug and date in $post_before yield the old URL.
+	 *
+	 * @param WP_Post $post_before Post object before the update.
+	 * @return string|false Old permalink, or false when it cannot be built.
+	 */
+	private function get_permalink_from_post_before( $post_before ) {
+		if ( 'attachment' === $post_before->post_type ) {
+			return false;
+		}
+
+		$old_permalink = get_permalink( $post_before );
+
+		return $old_permalink ? $old_permalink : false;
+	}
+
+	/**
+	 * Capture the term archives a post belonged to before an update.
+	 *
+	 * post_updated fires before new taxonomies are assigned, so reading the
+	 * terms for the pre-update post ID still yields the previous ones. The
+	 * collected URLs are merged into the next flush for the same post so a
+	 * category/tag move purges the OLD archives too, not just the new ones.
+	 *
+	 * @param WP_Post $post_before Post object before the update.
+	 */
+	private function stash_previous_term_urls( $post_before ) {
+		if ( 'post' !== $post_before->post_type ) {
+			return;
+		}
+
+		$urls = array();
+
+		$cats = get_the_category( $post_before->ID );
+		foreach ( $cats as $cat ) {
+			if ( $cat_link = get_category_link( $cat->term_id ) ) {
+				$urls[] = $cat_link;
+			}
+		}
+
+		// get_the_tags() returns false (not an empty array) when no tags exist.
+		$tags = get_the_tags( $post_before->ID );
+		if ( $tags && ! is_wp_error( $tags ) ) {
+			foreach ( $tags as $tag ) {
+				if ( $tag_link = get_tag_link( $tag->term_id ) ) {
+					$urls[] = $tag_link;
+				}
+			}
+		}
+
+		if ( ! empty( $urls ) ) {
+			$this->previous_term_urls[ $post_before->ID ] = array_unique( $urls );
+		}
 	}
 
 	/**
