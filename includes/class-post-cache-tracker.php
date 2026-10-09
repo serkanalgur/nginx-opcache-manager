@@ -46,7 +46,7 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'before_delete_term', array( $this, 'on_term_delete' ), 10, 5 );
 
 		// Comment actions
-		add_action( 'comment_post', array( $this, 'on_comment_post' ), 10, 2 );
+		add_action( 'comment_post', array( $this, 'on_comment_post' ), 10, 3 );
 		add_action( 'wp_insert_comment', array( $this, 'on_comment_insert' ), 10, 2 );
 		add_action( 'delete_comment', array( $this, 'on_comment_delete' ), 10, 2 );
 
@@ -331,10 +331,18 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 	/**
 	 * Handle comment post
+	 *
+	 * @param int   $comment_id       Comment ID.
+	 * @param int   $comment_approved Comment approval status.
+	 * @param array $commentdata     Comment data.
 	 */
-	public function on_comment_post( $comment_id, $comment_object ) {
-		if ( isset( $comment_object->comment_post_ID ) ) {
-			$this->flush_post_cache( $comment_object->comment_post_ID );
+	public function on_comment_post( $comment_id, $comment_approved, $commentdata ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		if ( isset( $commentdata['comment_post_ID'] ) ) {
+			$this->flush_post_cache( (int) $commentdata['comment_post_ID'] );
 		}
 	}
 
