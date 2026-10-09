@@ -4,6 +4,20 @@ All notable changes to the Nginx Opcache Manager plugin are documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-10-09
+
+### Fixed
+- **Cache is now purged when posts, pages or products are trashed or restored**: the trash/untrash hooks either were not registered or did not flush, so a trashed post stayed cached and publicly visible at its old URL until an unrelated purge.
+- **Deleting a category or tag now purges its archive**: term deletion was hooked to actions that do not fire with those argument counts, so the deleted term's archive page kept serving stale cache.
+- **Changing a post slug now purges the old URL**: only the new permalink was invalidated; the old cached URL kept serving the pre-edit content.
+- **Term edits now purge correctly**: the term-edit hooks were registered with wrong argument counts, so the callback never received the term it was meant to invalidate.
+- **The WooCommerce cache-flush setting now works independently of the post-cache-flush setting**: both toggles previously shared one code path, so disabling one silently disabled the other.
+- **The static blog page and previous category archives now purge on post update**: a post moved out of a category or off the static posts page left the old listing pages stale.
+- **Purge failures are now reported in the log**: silent failures left the dashboard claiming a purge that never happened.
+
+### Added
+- **Fastcgi cache directory levels are configurable**: the `fastcgi_cache_path` levels were hard-coded; a new `nom_fastcgi_cache_levels` option (default `1:2`, identical to the previous hard-coded value) lets admins match their own cache layout. Existing installs keep identical behaviour.
+
 ## [1.3.6] - 2026-10-03
 
 > **Note:** the `v1.3.5` tag exists but was never released. Its build failed in CI
