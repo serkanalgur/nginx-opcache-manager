@@ -696,22 +696,67 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 	/**
 	 * Flush cache for specific URLs
+	 * 
+	 * Counts purge failures per reason so a broken cache layout (e.g. the
+	 * configured cache levels not matching nginx's fastcgi_cache_path levels)
+	 * is observable instead of being silently discarded.
+	 * 
+	 * @return array Result array with keys: attempted (int), failed (int),
+	 *               not_found (int), delete_failed (int)
 	 */
 	private function flush_cache_for_urls( $urls ) {
+		$counts = array(
+			'attempted'      => 0,
+			'failed'         => 0,
+			'not_found'      => 0,
+			'delete_failed'  => 0,
+		);
+
 		if ( empty( $urls ) ) {
-			return;
+			return $counts;
 		}
 
 		$cache_manager = new Nginx_Opcache_Manager_Cache();
 
 		foreach ( $urls as $url ) {
 			if ( ! empty( $url ) ) {
-				$cache_manager->clear_url_cache( $url );
+				$this->count_flush_result( $counts, $cache_manager->clear_url_cache( $url ) );
 			}
 		}
 
 		// Also flush home page as fallback
-		$cache_manager->clear_url_cache( home_url( '/' ) );
+		$this->count_flush_result( $counts, $cache_manager->clear_url_cache( home_url( '/' ) ) );
+
+		if ( $counts['failed'] > 0 && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			error_log( sprintf(
+				'[%s] Cache Purge - %1$d of %2$d URLs failed (%3$d not found, %4$d delete failed). If "not found" dominates, check that the cache levels setting matches the fastcgi_cache_path levels in nginx.',
+				current_time( 'mysql' ),
+				$counts['failed'],
+				$counts['attempted'],
+				$counts['not_found'],
+				$counts['delete_failed']
+			) );
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Tally one clear_url_cache() result into the flush counts
+	 * 
+	 * @param array $counts Counts array, modified by reference (attempted, failed, not_found, delete_failed)
+	 * @param array $result Result array returned by Nginx_Opcache_Manager_Cache::clear_url_cache()
+	 */
+	private function count_flush_result( &$counts, $result ) {
+		$counts['attempted']++;
+
+		if ( empty( $result['success'] ) ) {
+			$counts['failed']++;
+
+			if ( isset( $result['reason'] ) && isset( $counts[ $result['reason'] ] ) ) {
+				$counts[ $result['reason'] ]++;
+			}
+		}
 	}
 
 	/**

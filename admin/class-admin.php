@@ -82,6 +82,7 @@ class Nginx_Opcache_Manager_Admin {
 		register_setting( 'nom_settings_group', 'nom_enable_post_cache_flush' );
 		register_setting( 'nom_settings_group', 'nom_enable_woocommerce_flush', array( 'sanitize_callback' => array( $this, 'sanitize_checkbox' ) ) );
 		register_setting( 'nom_settings_group', 'nom_fastcgi_cache_key_schema' );
+		register_setting( 'nom_settings_group', 'nom_fastcgi_cache_levels' );
 		register_setting(
 			'nom_settings_group',
 			'nom_schedule_enabled',
