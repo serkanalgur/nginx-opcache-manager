@@ -20,6 +20,11 @@ class Nginx_Opcache_Manager_Cache {
 	const DEFAULT_CACHE_PATH = '/var/run/nginx-cache';
 
 	/**
+	 * Default nginx fastcgi_cache_path levels (nginx default)
+	 */
+	const DEFAULT_CACHE_LEVELS = '1:2';
+
+	/**
 	 * Initialize database table for cache activity logs
 	 */
 	public function initialize() {
@@ -61,6 +66,66 @@ class Nginx_Opcache_Manager_Cache {
 	private function get_cache_path() {
 		$path = get_option( 'nom_nginx_cache_path', self::DEFAULT_CACHE_PATH );
 		return sanitize_text_field( $path );
+	}
+
+	/**
+	 * Get nginx fastcgi_cache_path levels from settings
+	 * 
+	 * Falls back to the nginx default ("1:2") when the stored value is
+	 * missing or not a levels string nginx accepts, so purges still target
+	 * the correct path instead of a broken one.
+	 * 
+	 * @return string Levels string, e.g. "1:2"
+	 */
+	private function get_cache_levels() {
+		$levels = get_option( 'nom_fastcgi_cache_levels', self::DEFAULT_CACHE_LEVELS );
+		$levels = sanitize_text_field( $levels );
+
+		if ( ! self::is_valid_cache_levels( $levels ) ) {
+			return self::DEFAULT_CACHE_LEVELS;
+		}
+
+		return $levels;
+	}
+
+	/**
+	 * Check whether a levels string is one nginx accepts
+	 * 
+	 * nginx allows 1 to 3 levels, and each level accepts the value 1 or 2
+	 * (e.g. "1", "1:2", "2:2:2"). See ngx_http_fastcgi_module fastcgi_cache_path.
+	 * 
+	 * @param string $levels Levels string to validate
+	 * @return bool Whether the levels string is valid
+	 */
+	public static function is_valid_cache_levels( $levels ) {
+		return (bool) preg_match( '/^[12](:[12]){0,2}$/', $levels );
+	}
+
+	/**
+	 * Build the cache file path (relative to the cache root) for a key hash
+	 * 
+	 * Mirrors nginx fastcgi_cache_path "levels" semantics: level directories
+	 * are taken from the END of the MD5 hash, in the order the levels are
+	 * declared, and the file name is the full hash.
+	 * Example: hash=b7f54b2df7773722d382f4809d65029c, levels "1:2" -> /c/29/b7f54b2df7773722d382f4809d65029c
+	 * (matches the nginx documentation for levels=1:2)
+	 * 
+	 * @param string $cache_key_hash Full MD5 hex hash of the cache key
+	 * @param string $levels Levels string, e.g. "1:2"
+	 * @return string Path relative to the cache root, e.g. "/c/29/<hash>"
+	 */
+	public static function build_cache_file_relative_path( $cache_key_hash, $levels ) {
+		$offset = 0; // Characters already consumed from the end of the hash
+		$path = '';
+
+		foreach ( explode( ':', $levels ) as $level ) {
+			$length = (int) $level;
+			$offset += $length;
+			// Each level takes its characters immediately before the previous slice.
+			$path .= '/' . substr( $cache_key_hash, -$offset, $length );
+		}
+
+		return $path . '/' . $cache_key_hash;
 	}
 
 	/**
@@ -118,15 +183,17 @@ class Nginx_Opcache_Manager_Cache {
 	 * 
 	 * Uses customizable fastcgi_cache_key schema from settings.
 	 * Default format: "$scheme$request_method$host$request_uri"
-	 * Cache directory structure:
-	 * - Last character of MD5 as first folder
-	 * - 2 characters before last (positions -3 to -2) as second folder
+	 * Cache directory structure follows the configurable fastcgi_cache_path
+	 * levels (option: nom_fastcgi_cache_levels, default "1:2"):
+	 * - Level directories are taken from the end of the MD5 hash, in the
+	 *   order the levels are declared
 	 * - Full MD5 hash as filename
-	 * Example: beda56a8736ae8bc335cdd74983649f5 -> /5/9f/beda56a8736ae8bc335cdd74983649f5
+	 * Example with levels "1:2": beda56a8736ae8bc335cdd74983649f5 -> /5/9f/beda56a8736ae8bc335cdd74983649f5
 	 * 
 	 * @param string $url Full URL (e.g., https://example.com/path)
 	 * @param string $method Optional HTTP method (default: GET)
-	 * @return array Result array with keys: success (bool), file_path (string), message (string)
+	 * @return array Result array with keys: success (bool), file_path (string), message (string), reason (string)
+	 *               Reason is 'invalid_url', 'not_found' or 'delete_failed' when success is false, '' otherwise.
 	 */
 	public function clear_url_cache( $url, $method = 'GET' ) {
 		// Parse URL to extract components
@@ -137,6 +204,7 @@ class Nginx_Opcache_Manager_Cache {
 				'success'   => false,
 				'file_path' => '',
 				'message'   => __( 'Invalid URL provided', 'nginx-opcache-manager' ),
+				'reason'    => 'invalid_url',
 			);
 		}
 
@@ -154,10 +222,11 @@ class Nginx_Opcache_Manager_Cache {
 		$cache_key_hash = md5( $cache_key_string );
 		
 		$cache_path = $this->get_cache_path();
+		$levels = $this->get_cache_levels();
 		
-		// Build cache file path: /last_char/2_chars_before_last/full_md5
-		// Example: hash=beda56a8736ae8bc335cdd74983649f5 -> /5/9f/beda56a8736ae8bc335cdd74983649f5
-		$cache_file = $cache_path . '/' . substr( $cache_key_hash, -1 ) . '/' . substr( $cache_key_hash, -3, 2 ) . '/' . $cache_key_hash;
+		// Build cache file path using the configured fastcgi_cache_path levels.
+		// Example with levels "1:2": hash=beda56a8736ae8bc335cdd74983649f5 -> /5/9f/beda56a8736ae8bc335cdd74983649f5
+		$cache_file = $cache_path . self::build_cache_file_relative_path( $cache_key_hash, $levels );
 
 		if ( file_exists( $cache_file ) ) {
 			$deleted = unlink( $cache_file );
@@ -167,6 +236,7 @@ class Nginx_Opcache_Manager_Cache {
 					'success'   => true,
 					'file_path' => $cache_file,
 					'message'   => __( 'Cache file deleted successfully', 'nginx-opcache-manager' ),
+					'reason'    => '',
 				);
 			} else {
 				$this->log_cache_activity( 'delete_failed', $url, $cache_file, $method );
@@ -174,6 +244,7 @@ class Nginx_Opcache_Manager_Cache {
 					'success'   => false,
 					'file_path' => $cache_file,
 					'message'   => __( 'Failed to delete cache file. Check file permissions.', 'nginx-opcache-manager' ),
+					'reason'    => 'delete_failed',
 				);
 			}
 		} else {
@@ -181,9 +252,126 @@ class Nginx_Opcache_Manager_Cache {
 			return array(
 				'success'   => false,
 				'file_path' => $cache_file,
-				'message'   => __( 'Cache file not found at expected location', 'nginx-opcache-manager' ),
+				'message'   => __( 'Cache file not found at expected location. Verify the cache levels setting matches the fastcgi_cache_path levels in the nginx configuration.', 'nginx-opcache-manager' ),
+				'reason'    => 'not_found',
 			);
 		}
+	}
+
+	/**
+	 * Verify that the cache directory layout matches the configured levels
+	 * 
+	 * Read-only sanity check: samples cached files in the cache directory and
+	 * confirms each file's directory path matches the path the configured
+	 * levels would produce for that file's hash. This catches a mismatch
+	 * between nom_fastcgi_cache_levels and the levels=... of the live
+	 * nginx fastcgi_cache_path directive, which would make every purge miss.
+	 * 
+	 * Logs the verdict once per call when the layout does not match
+	 * (only when WP_DEBUG_LOG is enabled).
+	 * 
+	 * @return array Report with keys: status (string: 'match'|'mismatch'|'no_data'),
+	 *               configured_levels (string), cache_path (string),
+	 *               sampled_files (int), mismatches (array), message (string)
+	 */
+	public function verify_cache_levels() {
+		$levels = $this->get_cache_levels();
+		$cache_path = $this->get_cache_path();
+		// Levels directories plus the file itself.
+		$expected_depth = count( explode( ':', $levels ) ) + 1;
+		$max_samples = 100;
+
+		$report = array(
+			'status'            => 'no_data',
+			'configured_levels' => $levels,
+			'cache_path'        => $cache_path,
+			'sampled_files'     => 0,
+			'mismatches'        => array(),
+			'message'           => __( 'No cached files found to verify the levels against.', 'nginx-opcache-manager' ),
+		);
+
+		if ( ! is_dir( $cache_path ) ) {
+			$report['message'] = __( 'Cache directory does not exist.', 'nginx-opcache-manager' );
+			return $report;
+		}
+
+		$it = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $cache_path, RecursiveDirectoryIterator::SKIP_DOTS )
+		);
+
+		$mismatches = 0;
+
+		foreach ( $it as $file ) {
+			if ( ! $file->isFile() ) {
+				continue;
+			}
+
+			$relative_path = $it->getSubPathname();
+
+			// Only files stored at exactly the configured depth tell us anything.
+			if ( count( explode( '/', $relative_path ) ) !== $expected_depth ) {
+				continue;
+			}
+
+			$hash = basename( $relative_path );
+
+			// Skip anything that is not a full MD5 cache key hash.
+			if ( ! preg_match( '/^[0-9a-f]{32}$/', $hash ) ) {
+				continue;
+			}
+
+			$expected_path = ltrim( self::build_cache_file_relative_path( $hash, $levels ), '/' );
+			$report['sampled_files']++;
+
+			if ( $relative_path !== $expected_path ) {
+				$mismatches++;
+
+				if ( count( $report['mismatches'] ) < 5 ) {
+					$report['mismatches'][] = array(
+						'actual'   => $relative_path,
+						'expected' => $expected_path,
+					);
+				}
+			}
+
+			if ( $report['sampled_files'] >= $max_samples ) {
+				break;
+			}
+		}
+
+		if ( 0 === $report['sampled_files'] ) {
+			return $report;
+		}
+
+		if ( $mismatches > 0 ) {
+			$report['status'] = 'mismatch';
+			$report['message'] = sprintf(
+				/* translators: 1: configured levels string, 2: number of mismatched files, 3: number of sampled files */
+				__( 'Cache directory layout does not match configured levels %1$s (%2$d of %3$d sampled files). The cache levels setting must match the levels parameter of the nginx fastcgi_cache_path directive.', 'nginx-opcache-manager' ),
+				$levels,
+				$mismatches,
+				$report['sampled_files']
+			);
+
+			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				error_log(
+					sprintf(
+						'[%s] Cache Levels Check - %s',
+						current_time( 'mysql' ),
+						$report['message']
+					)
+				);
+			}
+		} else {
+			$report['status'] = 'match';
+			$report['message'] = sprintf(
+				/* translators: %s: configured levels string */
+				__( 'Cache directory layout matches configured levels %s.', 'nginx-opcache-manager' ),
+				$levels
+			);
+		}
+
+		return $report;
 	}
 
 	/**

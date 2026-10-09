@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Nginx Opcache Manager
  * Description: Manage and monitor Nginx cache and PHP Opcache directly from WordPress dashboard with analytics
- * Version: 1.3.6
+ * Version: 1.4.0
  * Author: Serkan Algur
  * Author URI: https://github.com/serkanalgur
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants
  */
-define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.3.6' );
+define( 'NGINX_OPCACHE_MANAGER_VERSION', '1.4.0' );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'NGINX_OPCACHE_MANAGER_PLUGIN_FILE', __FILE__ );
@@ -91,10 +91,12 @@ class Nginx_Opcache_Manager {
 		$scheduler = new Nginx_Opcache_Manager_Scheduler();
 		$scheduler->init();
 
-		// Initialize post cache tracker
-		if ( get_option( 'nom_enable_post_cache_flush', true ) ) {
-			new Nginx_Opcache_Manager_Post_Cache_Tracker();
-		}
+		// Initialize post cache tracker.
+		// Always instantiated: the nom_enable_post_cache_flush option gates the
+		// post/term/comment handlers inside the tracker itself, while the
+		// WooCommerce handlers stay reachable and are gated separately by
+		// nom_enable_woocommerce_flush.
+		new Nginx_Opcache_Manager_Post_Cache_Tracker();
 
 		// Register REST API routes
 		add_action( 'rest_api_init', array( new Nginx_Opcache_Manager_REST_API(), 'register_routes' ) );

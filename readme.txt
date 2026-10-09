@@ -5,7 +5,7 @@ Tags: nginx, cache, opcache, performance, optimization, server management
 Requires at least: 6.2
 Requires PHP: 7.2
 Tested up to: 6.9.4
-Stable tag: 1.3.6
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,17 @@ Cache statistics are preserved. Auto-flush hooks are removed. You can reactivate
 Yes, the plugin includes hooks and filters for developers to create custom extensions and integrations.
 
 == Changelog ==
+
+= 1.4.0 - October 9, 2026 =
+
+* **Fixed** Cache is now purged when posts, pages or products are trashed or restored - a trashed post could stay cached and publicly visible at its old URL
+* **Fixed** Deleting a category or tag now purges its archive - the deletion hooks were registered with argument counts that never fired
+* **Fixed** Changing a post slug now purges the old URL - previously only the new permalink was invalidated
+* **Fixed** Term edits now purge correctly - the term-edit hooks were registered with wrong argument counts
+* **Fixed** The WooCommerce cache-flush setting now works independently of the post-cache-flush setting - disabling one silently disabled the other
+* **Fixed** The static blog page and previous category archives now purge on post update
+* **Fixed** Purge failures are now reported in the log instead of passing silently
+* **Added** Fastcgi cache directory levels are configurable via a new option (default 1:2, identical to the previous hard-coded value - existing installs keep identical behaviour)
 
 = 1.3.6 - October 3, 2026 =
 
