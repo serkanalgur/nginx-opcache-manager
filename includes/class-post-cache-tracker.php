@@ -29,6 +29,8 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		add_action( 'save_post', array( $this, 'on_post_save' ), 10, 2 );
 		add_action( 'delete_post', array( $this, 'on_post_delete' ), 10, 2 );
 		add_action( 'publish_post', array( $this, 'on_post_publish' ), 10, 2 );
+		add_action( 'trashed_post', array( $this, 'on_post_trash' ), 10, 1 );
+		add_action( 'untrashed_post', array( $this, 'on_post_untrash' ), 10, 1 );
 
 		// Term actions
 		add_action( 'edited_term', array( $this, 'on_term_edit' ), 10, 3 );
@@ -97,6 +99,48 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 		// Log the change
 		$this->log_cache_flush( 'post_publish', $post_id, $post->post_title );
+	}
+
+	/**
+	 * Handle post moved to trash.
+	 *
+	 * The post still exists at this point, so its permalink is purged before
+	 * the trash redirect URL replaces it in any cache.
+	 *
+	 * @param int $post_id Post ID.
+	 */
+	public function on_post_trash( $post_id ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		// Don't process auto-saves or revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		$this->flush_post_cache( $post_id );
+	}
+
+	/**
+	 * Handle post restored from trash.
+	 *
+	 * Content may have changed while the post was trashed, so the cache is
+	 * flushed again even though the post is back at its previous permalink.
+	 *
+	 * @param int $post_id Post ID.
+	 */
+	public function on_post_untrash( $post_id ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
+		// Don't process auto-saves or revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		$this->flush_post_cache( $post_id );
 	}
 
 	/**
