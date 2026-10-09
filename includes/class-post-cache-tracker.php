@@ -571,6 +571,20 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 
 		// Category pages
 		if ( 'post' === $post->post_type ) {
+			// Static posts page (Settings > Reading): the blog index lives
+			// there instead of the home URL. Only queued when it differs
+			// from the home URL already added above.
+			$posts_page_id = (int) get_option( 'page_for_posts' );
+			if ( $posts_page_id > 0 ) {
+				$posts_page = get_post( $posts_page_id );
+				if ( $posts_page && 'page' === $posts_page->post_type && 'publish' === $posts_page->post_status ) {
+					$posts_page_url = get_permalink( $posts_page );
+					if ( $posts_page_url && $posts_page_url !== home_url( '/' ) ) {
+						$urls[] = $posts_page_url;
+					}
+				}
+			}
+
 			$cats = get_the_category( $post->ID );
 			foreach ( $cats as $cat ) {
 				if ( $cat_link = get_category_link( $cat->term_id ) ) {
@@ -586,6 +600,13 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 						$urls[] = $tag_link;
 					}
 				}
+			}
+
+			// Previous term archives (stashed by on_post_updated) so a
+			// category/tag move purges the terms the post was removed from.
+			if ( ! empty( $this->previous_term_urls[ $post->ID ] ) ) {
+				$urls = array_merge( $urls, $this->previous_term_urls[ $post->ID ] );
+				unset( $this->previous_term_urls[ $post->ID ] );
 			}
 		}
 
