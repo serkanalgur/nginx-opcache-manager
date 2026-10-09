@@ -51,6 +51,10 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Handle post save
 	 */
 	public function on_post_save( $post_id, $post ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		// Don't process auto-saves or revisions
 		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 			return;
@@ -68,6 +72,10 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Handle post delete
 	 */
 	public function on_post_delete( $post_id, $post ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		$this->flush_post_cache( $post_id );
 	}
 
@@ -75,6 +83,10 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Handle post publish
 	 */
 	public function on_post_publish( $post_id, $post ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		// Flush home page and post archives
 		$this->flush_cache_for_urls( array(
 			home_url( '/' ),
@@ -123,6 +135,10 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Handle comment insert (for pending comments)
 	 */
 	public function on_comment_insert( $comment_id, $comment ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		if ( isset( $comment->comment_post_ID ) ) {
 			$this->flush_post_cache( $comment->comment_post_ID );
 		}
@@ -132,6 +148,10 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 	 * Handle comment delete
 	 */
 	public function on_comment_delete( $comment_id, $comment ) {
+		if ( ! $this->is_post_flush_enabled() ) {
+			return;
+		}
+
 		if ( isset( $comment->comment_post_ID ) ) {
 			$this->flush_post_cache( $comment->comment_post_ID );
 		}
@@ -207,6 +227,15 @@ class Nginx_Opcache_Manager_Post_Cache_Tracker {
 		} else {
 			$this->flush_product_cache( (int) $variation_id, 'product_change' );
 		}
+	}
+
+	/**
+	 * Check if post/term/comment auto-flush is enabled.
+	 *
+	 * @return bool
+	 */
+	private function is_post_flush_enabled() {
+		return (bool) get_option( 'nom_enable_post_cache_flush', true );
 	}
 
 	/**

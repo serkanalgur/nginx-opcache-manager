@@ -91,10 +91,12 @@ class Nginx_Opcache_Manager {
 		$scheduler = new Nginx_Opcache_Manager_Scheduler();
 		$scheduler->init();
 
-		// Initialize post cache tracker
-		if ( get_option( 'nom_enable_post_cache_flush', true ) ) {
-			new Nginx_Opcache_Manager_Post_Cache_Tracker();
-		}
+		// Initialize post cache tracker.
+		// Always instantiated: the nom_enable_post_cache_flush option gates the
+		// post/term/comment handlers inside the tracker itself, while the
+		// WooCommerce handlers stay reachable and are gated separately by
+		// nom_enable_woocommerce_flush.
+		new Nginx_Opcache_Manager_Post_Cache_Tracker();
 
 		// Register REST API routes
 		add_action( 'rest_api_init', array( new Nginx_Opcache_Manager_REST_API(), 'register_routes' ) );
