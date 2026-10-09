@@ -39,6 +39,9 @@
             "Nginx_Opcache_Manager\\": "includes/"
         }
     },
+    "scripts": {
+        "test": "phpunit"
+    },
     "config": {
         "allow-plugins": {
             "composer/installers": true,
